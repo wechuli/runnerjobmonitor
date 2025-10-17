@@ -26,14 +26,22 @@ dist-ssr
 # Database
 *.db
 *.db-journal
+backend/*.db
+backend/*.db-journal
 
 # Environment variables
 .env
 .env.local
 .env.production
+backend/.env
+frontend/.env
 
 # Secrets
 private-key.pem
 service-account-key.json
 *.pem
 *-key.json
+
+# Build outputs
+backend/dist
+frontend/dist
