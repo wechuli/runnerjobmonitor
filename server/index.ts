@@ -19,8 +19,8 @@ const app: Express = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors());
-// FIX: Using express.json() without a path argument to resolve a TypeScript overload issue.
-app.use(express.json());
+// FIX: Explicitly providing a path to app.use() helps TypeScript resolve the correct overload for the express.json() middleware.
+app.use('/', express.json());
 
 // --- API ROUTES ---
 

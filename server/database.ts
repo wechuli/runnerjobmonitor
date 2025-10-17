@@ -1,14 +1,19 @@
+
 import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
 import type { Organization, Repository, RunData, WorkflowRun, RunStatus, MachineInfo, ResourceUsage, LogEntry, WorkflowRunSummary } from '../types';
 
 let db: Database;
 
+const DB_PATH = process.env.DB_PATH || './actions_monitor.db';
+
 export async function initializeDatabase() {
   db = await open({
-    filename: './actions_monitor.db',
+    filename: DB_PATH,
     driver: sqlite3.Database,
   });
+
+  console.log(`Database connected at ${DB_PATH}`);
 
   await db.exec('PRAGMA foreign_keys = ON;');
 
