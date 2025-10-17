@@ -1,5 +1,0 @@
-{
-  "name": "GitHub Actions Runner Monitor",
-  "description": "An application to monitor GitHub Actions runner resource usage, visualize consumption over time, correlate with logs, and use generative AI to diagnose performance issues and provide optimization recommendations.",
-  "requestFramePermissions": []
-}
