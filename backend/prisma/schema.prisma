@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  githubId      String         @unique
+  username      String
+  email         String?
+  avatarUrl     String?
+  accessToken   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  installations Installation[]
+}
+
+model Installation {
+  id                 Int      @id @default(autoincrement())
+  githubInstallationId String @unique
+  accountLogin       String
+  accountType        String // "User" or "Organization"
+  avatarUrl          String?
+  userId             Int?
+  user               User?    @relation(fields: [userId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  jobs               Job[]
+}
+
+model Job {
+  id                 Int          @id @default(autoincrement())
+  githubJobId        String       @unique
+  githubRunId        String
+  name               String
+  status             String // queued, in_progress, completed
+  conclusion         String? // success, failure, cancelled, skipped
+  repository         String
+  branch             String?
+  commitHash         String?
+  workflowName       String?
+  runnerName         String?
+  runnerOs           String?
+  runnerArch         String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  logUrl             String? // GCP Storage URL
+  installationId     Int
+  installation       Installation @relation(fields: [installationId], references: [id])
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  metrics            Metric[]
+}
+
+model Metric {
+  id                 Int      @id @default(autoincrement())
+  jobId              Int
+  job                Job      @relation(fields: [jobId], references: [id])
+  timestamp          DateTime
+  hostname           String?
+  cpuCores           Int?
+  cpuUsagePercent    Float?
+  memoryTotalBytes   BigInt?
+  memoryUsedBytes    BigInt?
+  memoryUsagePercent Float?
+  diskUsagePercent   Float?
+  networkRxBytes     BigInt?
+  networkTxBytes     BigInt?
+  topProcesses       String? // JSON string
+  rawPayload         String // Full JSON payload
+  createdAt          DateTime @default(now())
+
+  @@index([jobId, timestamp])
+}
