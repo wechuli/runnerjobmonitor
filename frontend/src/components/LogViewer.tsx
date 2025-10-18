@@ -1,5 +1,4 @@
 import React from 'react';
-import { Box, Text, Link } from '@chakra-ui/react';
 
 interface LogViewerProps {
   logUrl: string | null;
@@ -8,40 +7,27 @@ interface LogViewerProps {
 const LogViewer: React.FC<LogViewerProps> = ({ logUrl }) => {
   if (!logUrl) {
     return (
-      <Box
-        bg="gray.900"
-        p={4}
-        borderRadius="md"
-        fontFamily="mono"
-        fontSize="sm"
-        color="gray.400"
-        height="400px"
-        overflowY="auto"
-      >
-        <Text>No logs available yet. Logs will be uploaded when the job completes.</Text>
-      </Box>
+      <div className="bg-slate-900 p-4 rounded-md font-mono text-sm text-slate-400 h-[400px] overflow-y-auto">
+        <p>No logs available yet. Logs will be uploaded when the job completes.</p>
+      </div>
     );
   }
 
   return (
-    <Box>
-      <Link href={logUrl} isExternal color="blue.500" mb={2} display="block">
-        View Full Logs in GCP Storage
-      </Link>
-      <Box
-        bg="gray.900"
-        p={4}
-        borderRadius="md"
-        fontFamily="mono"
-        fontSize="sm"
-        color="green.400"
-        height="400px"
-        overflowY="auto"
+    <div>
+      <a 
+        href={logUrl} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-primary hover:underline mb-2 block"
       >
-        <Text>Logs are stored in Google Cloud Storage.</Text>
-        <Text mt={2}>Click the link above to view the complete logs.</Text>
-      </Box>
-    </Box>
+        View Full Logs in GCP Storage
+      </a>
+      <div className="bg-slate-900 p-4 rounded-md font-mono text-sm text-green-400 h-[400px] overflow-y-auto">
+        <p>Logs are stored in Google Cloud Storage.</p>
+        <p className="mt-2">Click the link above to view the complete logs.</p>
+      </div>
+    </div>
   );
 };
 

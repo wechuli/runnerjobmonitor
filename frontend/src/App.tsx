@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { ChakraProvider, Box } from '@chakra-ui/react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Organization, Repository, WorkflowRun } from './types';
 import OrganizationListPage from './pages/OrganizationListPage';
 import RepositoryListPage from './pages/RepositoryListPage';
 import WorkflowRunListPage from './pages/WorkflowRunListPage';
 import JobDetailPage from './pages/JobDetailPage';
+import LoginPage from './pages/LoginPage';
 
 type AppStep = 'organizations' | 'repositories' | 'runs' | 'jobs';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { user, isLoading } = useAuth();
   const [step, setStep] = useState<AppStep>('organizations');
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null);
@@ -47,31 +49,52 @@ const App: React.FC = () => {
     setStep('runs');
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
   return (
-    <ChakraProvider>
-      <Box minH="100vh" bg="gray.50">
-        {step === 'organizations' && (
-          <OrganizationListPage onSelectOrganization={handleSelectOrganization} />
-        )}
-        {step === 'repositories' && selectedOrganization && (
-          <RepositoryListPage
-            organization={selectedOrganization}
-            onSelectRepository={handleSelectRepository}
-            onBack={handleBackToOrganizations}
-          />
-        )}
-        {step === 'runs' && selectedRepository && (
-          <WorkflowRunListPage
-            repository={selectedRepository}
-            onSelectRun={handleSelectRun}
-            onBack={handleBackToRepositories}
-          />
-        )}
-        {step === 'jobs' && selectedRun && (
-          <JobDetailPage workflowRun={selectedRun} onBack={handleBackToRuns} />
-        )}
-      </Box>
-    </ChakraProvider>
+    <>
+      {step === 'organizations' && (
+        <OrganizationListPage onSelectOrganization={handleSelectOrganization} />
+      )}
+      {step === 'repositories' && selectedOrganization && (
+        <RepositoryListPage
+          organization={selectedOrganization}
+          onSelectRepository={handleSelectRepository}
+          onBack={handleBackToOrganizations}
+        />
+      )}
+      {step === 'runs' && selectedRepository && (
+        <WorkflowRunListPage
+          repository={selectedRepository}
+          onSelectRun={handleSelectRun}
+          onBack={handleBackToRepositories}
+        />
+      )}
+      {step === 'jobs' && selectedRun && (
+        <JobDetailPage workflowRun={selectedRun} onBack={handleBackToRuns} />
+      )}
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

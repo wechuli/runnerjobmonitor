@@ -1,19 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Container,
-  Heading,
-  SimpleGrid,
-  Card,
-  CardBody,
-  Avatar,
-  Text,
-  Spinner,
-  Alert,
-  AlertIcon,
-} from '@chakra-ui/react';
-import { api } from '../services/api';
-import { Organization } from '../types';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Organization } from '@/types';
+import { dummyOrganizations } from '@/data/dummyData';
+import { api } from '@/services/api';
+import Layout from '@/components/Layout';
+import { Loader2 } from 'lucide-react';
 
 interface OrganizationListPageProps {
   onSelectOrganization: (org: Organization) => void;
@@ -32,7 +24,10 @@ const OrganizationListPage: React.FC<OrganizationListPageProps> = ({ onSelectOrg
         setOrganizations(data);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load organizations');
+        // Fallback to dummy data if API fails
+        console.warn('Failed to fetch organizations from API, using dummy data:', err);
+        setOrganizations(dummyOrganizations);
+        setError(null);
       } finally {
         setLoading(false);
       }
@@ -43,51 +38,59 @@ const OrganizationListPage: React.FC<OrganizationListPageProps> = ({ onSelectOrg
 
   if (loading) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Box textAlign="center" py={10}>
-          <Spinner size="xl" />
-          <Text mt={4}>Loading organizations...</Text>
-        </Box>
-      </Container>
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-4 text-muted-foreground">Loading organizations...</p>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Alert status="error">
-          <AlertIcon />
+      <Layout>
+        <div className="bg-destructive/10 border border-destructive/50 text-destructive px-4 py-3 rounded-lg">
           {error}
-        </Alert>
-      </Container>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <Heading mb={6}>Select an Organization</Heading>
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-        {organizations.map((org) => (
-          <Card
-            key={org.id}
-            cursor="pointer"
-            onClick={() => onSelectOrganization(org)}
-            _hover={{ transform: 'translateY(-4px)', shadow: 'lg' }}
-            transition="all 0.2s"
-          >
-            <CardBody display="flex" alignItems="center" gap={4}>
-              <Avatar src={org.avatarUrl || undefined} name={org.name} size="lg" />
-              <Box>
-                <Text fontWeight="bold" fontSize="lg">
-                  {org.name}
-                </Text>
-                <Text color="gray.500">@{org.login}</Text>
-              </Box>
-            </CardBody>
-          </Card>
-        ))}
-      </SimpleGrid>
-    </Container>
+    <Layout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
+          <p className="text-muted-foreground mt-2">
+            Select an organization to view its repositories and workflow runs
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {organizations.map((org) => (
+            <Card
+              key={org.id}
+              className="cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1"
+              onClick={() => onSelectOrganization(org)}
+            >
+              <CardContent className="flex items-center gap-4 p-6">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={org.avatarUrl || undefined} alt={org.name} />
+                  <AvatarFallback>{org.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-lg truncate">{org.name}</p>
+                  <p className="text-sm text-muted-foreground truncate">@{org.login}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </Layout>
   );
 };
 

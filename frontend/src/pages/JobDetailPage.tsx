@@ -1,27 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Container,
-  Heading,
-  Button,
-  Grid,
-  GridItem,
-  Card,
-  CardHeader,
-  CardBody,
-  Text,
-  Badge,
-  Spinner,
-  Alert,
-  AlertIcon,
-  List,
-  ListItem,
-} from '@chakra-ui/react';
-import { api } from '../services/api';
-import { WorkflowRun, Job, JobDetail, MetricChartData } from '../types';
-import MetricsChart from '../components/MetricsChart';
-import LogViewer from '../components/LogViewer';
-import GeminiAnalysisView from '../components/GeminiAnalysisView';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { WorkflowRun, Job, JobDetail, MetricChartData } from '@/types';
+import { api } from '@/services/api';
+import Layout from '@/components/Layout';
+import Sidebar from '@/components/Sidebar';
+import CpuChart from '@/components/charts/CpuChart';
+import MemoryChart from '@/components/charts/MemoryChart';
+import DiskChart from '@/components/charts/DiskChart';
+import LogViewer from '@/components/LogViewer';
+import GeminiAnalysisView from '@/components/GeminiAnalysisView';
+import { Loader2 } from 'lucide-react';
 
 interface JobDetailPageProps {
   workflowRun: WorkflowRun;
@@ -78,188 +67,188 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ workflowRun, onBack }) =>
     }));
   };
 
+  const getStatusVariant = (conclusion: string | null): 'success' | 'destructive' | 'warning' => {
+    if (conclusion === 'success') return 'success';
+    if (conclusion === 'failure') return 'destructive';
+    return 'warning';
+  };
+
+  const sidebar = (
+    <Sidebar title="Jobs" onBack={onBack}>
+      {loading ? (
+        <div className="flex items-center justify-center p-4">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {jobs.map((job) => (
+            <button
+              key={job.id}
+              onClick={() => handleSelectJob(job.id)}
+              className={`w-full text-left p-3 rounded-md border transition-colors ${
+                selectedJob?.id === job.id
+                  ? 'bg-primary/10 border-primary'
+                  : 'bg-background border-border hover:bg-muted'
+              }`}
+            >
+              <p className="font-medium text-sm truncate mb-1">{job.name}</p>
+              <Badge variant={getStatusVariant(job.conclusion)}>
+                {job.conclusion || job.status}
+              </Badge>
+            </button>
+          ))}
+        </div>
+      )}
+    </Sidebar>
+  );
+
   if (loading) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Box textAlign="center" py={10}>
-          <Spinner size="xl" />
-          <Text mt={4}>Loading jobs...</Text>
-        </Box>
-      </Container>
+      <Layout sidebar={sidebar}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-4 text-muted-foreground">Loading jobs...</p>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Alert status="error">
-          <AlertIcon />
+      <Layout sidebar={sidebar}>
+        <div className="bg-destructive/10 border border-destructive/50 text-destructive px-4 py-3 rounded-lg">
           {error}
-        </Alert>
-      </Container>
+        </div>
+      </Layout>
     );
   }
 
   if (jobs.length === 0) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Button onClick={onBack} mb={4}>
-          ← Back to Runs
-        </Button>
-        <Alert status="info">
-          <AlertIcon />
+      <Layout sidebar={sidebar}>
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
           No jobs found for this workflow run.
-        </Alert>
-      </Container>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <Button onClick={onBack} mb={4}>
-        ← Back to Runs
-      </Button>
-      <Heading mb={6}>{workflowRun.name}</Heading>
+    <Layout sidebar={sidebar}>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{workflowRun.name}</h1>
+          <p className="text-muted-foreground mt-2">
+            Job details and resource metrics
+          </p>
+        </div>
 
-      <Grid templateColumns={{ base: '1fr', lg: '300px 1fr' }} gap={6}>
-        <GridItem>
-          <Card>
-            <CardHeader>
-              <Heading size="md">Jobs</Heading>
-            </CardHeader>
-            <CardBody>
-              <List spacing={2}>
-                {jobs.map((job) => (
-                  <ListItem
-                    key={job.id}
-                    p={3}
-                    borderRadius="md"
-                    cursor="pointer"
-                    bg={selectedJob?.id === job.id ? 'blue.50' : 'white'}
-                    border="1px"
-                    borderColor={selectedJob?.id === job.id ? 'blue.300' : 'gray.200'}
-                    _hover={{ bg: 'gray.50' }}
-                    onClick={() => handleSelectJob(job.id)}
-                  >
-                    <Text fontWeight="medium" mb={1}>
-                      {job.name}
-                    </Text>
-                    <Badge
-                      colorScheme={
-                        job.conclusion === 'success'
-                          ? 'green'
-                          : job.conclusion === 'failure'
-                          ? 'red'
-                          : 'yellow'
-                      }
-                    >
-                      {job.conclusion || job.status}
+        {loadingDetail ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+              <p className="mt-4 text-muted-foreground">Loading job details...</p>
+            </div>
+          </div>
+        ) : selectedJob ? (
+          <div className="space-y-6">
+            {/* Job Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Status</p>
+                    <Badge variant={getStatusVariant(selectedJob.conclusion)} className="mt-1">
+                      {selectedJob.conclusion || selectedJob.status}
                     </Badge>
-                  </ListItem>
-                ))}
-              </List>
-            </CardBody>
-          </Card>
-        </GridItem>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Started At</p>
+                    <p className="text-sm mt-1">
+                      {selectedJob.startedAt
+                        ? new Date(selectedJob.startedAt).toLocaleString()
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Completed At</p>
+                    <p className="text-sm mt-1">
+                      {selectedJob.completedAt
+                        ? new Date(selectedJob.completedAt).toLocaleString()
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Branch</p>
+                    <p className="text-sm mt-1">{selectedJob.branch || 'N/A'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <GridItem>
-          {loadingDetail ? (
-            <Box textAlign="center" py={10}>
-              <Spinner size="xl" />
-              <Text mt={4}>Loading job details...</Text>
-            </Box>
-          ) : selectedJob ? (
-            <Box>
-              <Card mb={6}>
+            {/* Resource Metrics - Separate Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card>
                 <CardHeader>
-                  <Heading size="md">Job Information</Heading>
+                  <CardTitle className="text-lg">CPU Usage</CardTitle>
                 </CardHeader>
-                <CardBody>
-                  <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-                    <Box>
-                      <Text fontWeight="bold" mb={1}>
-                        Status
-                      </Text>
-                      <Badge
-                        colorScheme={
-                          selectedJob.conclusion === 'success'
-                            ? 'green'
-                            : selectedJob.conclusion === 'failure'
-                            ? 'red'
-                            : 'yellow'
-                        }
-                      >
-                        {selectedJob.conclusion || selectedJob.status}
-                      </Badge>
-                    </Box>
-                    <Box>
-                      <Text fontWeight="bold" mb={1}>
-                        Started At
-                      </Text>
-                      <Text>
-                        {selectedJob.startedAt
-                          ? new Date(selectedJob.startedAt).toLocaleString()
-                          : 'N/A'}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text fontWeight="bold" mb={1}>
-                        Completed At
-                      </Text>
-                      <Text>
-                        {selectedJob.completedAt
-                          ? new Date(selectedJob.completedAt).toLocaleString()
-                          : 'N/A'}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text fontWeight="bold" mb={1}>
-                        Branch
-                      </Text>
-                      <Text>{selectedJob.branch || 'N/A'}</Text>
-                    </Box>
-                  </Grid>
-                </CardBody>
+                <CardContent>
+                  <CpuChart data={formatMetricsForChart(selectedJob)} />
+                </CardContent>
               </Card>
 
-              <Card mb={6}>
+              <Card>
                 <CardHeader>
-                  <Heading size="md">Resource Metrics</Heading>
+                  <CardTitle className="text-lg">Memory Usage</CardTitle>
                 </CardHeader>
-                <CardBody>
-                  <MetricsChart data={formatMetricsForChart(selectedJob)} />
-                </CardBody>
+                <CardContent>
+                  <MemoryChart data={formatMetricsForChart(selectedJob)} />
+                </CardContent>
               </Card>
 
-              <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
-                <Card>
-                  <CardHeader>
-                    <Heading size="md">Job Logs</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <LogViewer logUrl={selectedJob.logUrl} />
-                  </CardBody>
-                </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Disk Usage</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <DiskChart data={formatMetricsForChart(selectedJob)} />
+                </CardContent>
+              </Card>
+            </div>
 
-                <Card>
-                  <CardHeader>
-                    <Heading size="md">AI Analysis</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <GeminiAnalysisView jobId={selectedJob.id} />
-                  </CardBody>
-                </Card>
-              </Grid>
-            </Box>
-          ) : (
-            <Alert status="info">
-              <AlertIcon />
-              Select a job to view details
-            </Alert>
-          )}
-        </GridItem>
-      </Grid>
-    </Container>
+            {/* Logs and AI Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Job Logs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LogViewer logUrl={selectedJob.logUrl} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>AI Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <GeminiAnalysisView jobId={selectedJob.id} />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
+            Select a job to view details
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 };
 

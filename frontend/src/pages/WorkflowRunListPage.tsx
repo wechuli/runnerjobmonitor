@@ -1,23 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Container,
-  Heading,
-  Button,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Spinner,
-  Alert,
-  AlertIcon,
-  Text,
-} from '@chakra-ui/react';
-import { api } from '../services/api';
-import { Repository, WorkflowRun } from '../types';
+import { Badge } from '@/components/ui/badge';
+import { Repository, WorkflowRun } from '@/types';
+import { api } from '@/services/api';
+import Layout from '@/components/Layout';
+import Sidebar from '@/components/Sidebar';
+import { Loader2 } from 'lucide-react';
 
 interface WorkflowRunListPageProps {
   repository: Repository;
@@ -51,84 +38,112 @@ const WorkflowRunListPage: React.FC<WorkflowRunListPageProps> = ({
     fetchRuns();
   }, [repository]);
 
-  const getStatusColor = (status: string, conclusion: string | null) => {
+  const getStatusVariant = (status: string, conclusion: string | null): 'success' | 'destructive' | 'warning' | 'secondary' => {
     if (status === 'completed') {
-      if (conclusion === 'success') return 'green';
-      if (conclusion === 'failure') return 'red';
-      if (conclusion === 'cancelled') return 'gray';
+      if (conclusion === 'success') return 'success';
+      if (conclusion === 'failure') return 'destructive';
+      if (conclusion === 'cancelled') return 'secondary';
     }
-    if (status === 'in_progress') return 'blue';
-    return 'yellow';
+    if (status === 'in_progress') return 'warning';
+    return 'secondary';
   };
+
+  const sidebar = (
+    <Sidebar title="Navigation" onBack={onBack}>
+      <div className="px-2 py-2">
+        <p className="text-sm font-medium">Repository</p>
+        <p className="text-sm text-muted-foreground mt-1">{repository.fullName}</p>
+      </div>
+    </Sidebar>
+  );
 
   if (loading) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Box textAlign="center" py={10}>
-          <Spinner size="xl" />
-          <Text mt={4}>Loading workflow runs...</Text>
-        </Box>
-      </Container>
+      <Layout sidebar={sidebar}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-4 text-muted-foreground">Loading workflow runs...</p>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Alert status="error">
-          <AlertIcon />
+      <Layout sidebar={sidebar}>
+        <div className="bg-destructive/10 border border-destructive/50 text-destructive px-4 py-3 rounded-lg">
           {error}
-        </Alert>
-      </Container>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <Button onClick={onBack} mb={4}>
-        ← Back to Repositories
-      </Button>
-      <Heading mb={6}>
-        Workflow Runs for {repository.fullName}
-      </Heading>
-      <Box overflowX="auto">
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>Workflow</Th>
-              <Th>Status</Th>
-              <Th>Branch</Th>
-              <Th>Commit</Th>
-              <Th>Created</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {runs.map((run) => (
-              <Tr
-                key={run.id}
-                cursor="pointer"
-                onClick={() => onSelectRun(run)}
-                _hover={{ bg: 'gray.50' }}
-              >
-                <Td>{run.name}</Td>
-                <Td>
-                  <Badge colorScheme={getStatusColor(run.status, run.conclusion)}>
-                    {run.conclusion || run.status}
-                  </Badge>
-                </Td>
-                <Td>{run.branch}</Td>
-                <Td>
-                  <Text fontFamily="mono" fontSize="sm">
-                    {run.commit}
-                  </Text>
-                </Td>
-                <Td>{new Date(run.createdAt).toLocaleString()}</Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </Box>
-    </Container>
+    <Layout sidebar={sidebar}>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Workflow Runs</h1>
+          <p className="text-muted-foreground mt-2">
+            Select a workflow run to view job details and metrics
+          </p>
+        </div>
+
+        <div className="border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Workflow
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Branch
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Commit
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Created
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-background divide-y divide-border">
+                {runs.map((run) => (
+                  <tr
+                    key={run.id}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => onSelectRun(run)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      {run.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <Badge variant={getStatusVariant(run.status, run.conclusion)}>
+                        {run.conclusion || run.status}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {run.branch}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
+                      {run.commit}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                      {new Date(run.createdAt).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </Layout>
   );
 };
 
