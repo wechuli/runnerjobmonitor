@@ -1,62 +1,71 @@
-import React from 'react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
-import { MetricChartData } from '@/types';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import type { MetricDataPoint } from '@/types';
 
 interface DiskChartProps {
-  data: MetricChartData[];
+  data: MetricDataPoint[];
 }
 
-const DiskChart: React.FC<DiskChartProps> = ({ data }) => {
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-        No disk metrics data available
-      </div>
-    );
-  }
+export const DiskChart = ({ data }: DiskChartProps) => {
+  const chartData = data.map((point) => ({
+    time: new Date(point.timestamp.replace(' ', 'T')).toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false 
+    }),
+    disk: point.system.disk[0]?.use_percentage || 0,
+  }));
+
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  const mutedForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim();
+  const popoverColor = getComputedStyle(document.documentElement).getPropertyValue('--popover').trim();
+  const popoverForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--popover-foreground').trim();
+  const chart3Color = getComputedStyle(document.documentElement).getPropertyValue('--chart-3').trim();
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+      <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={borderColor} opacity={0.3} />
         <XAxis
-          dataKey="timestamp"
-          tickFormatter={(value) => {
-            const date = new Date(value);
-            return date.toLocaleTimeString();
-          }}
-          className="text-xs"
+          dataKey="time"
+          fill={mutedForegroundColor}
+          fontSize={12}
+          tickLine={false}
+          axisLine={{ stroke: borderColor }}
         />
-        <YAxis 
-          label={{ value: 'Disk Usage (%)', angle: -90, position: 'insideLeft' }}
-          className="text-xs"
+        <YAxis
+          fill={mutedForegroundColor}
+          fontSize={12}
+          tickLine={false}
+          axisLine={{ stroke: borderColor }}
+          domain={[0, 100]}
+          label={{ 
+            value: 'Disk %', 
+            angle: -90, 
+            position: 'insideLeft',
+            style: { fill: mutedForegroundColor }
+          }}
         />
         <Tooltip
-          labelFormatter={(value) => new Date(value).toLocaleString()}
-          formatter={(value: number) => [`${value.toFixed(2)}%`, 'Disk']}
-          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+          contentStyle={{
+            backgroundColor: popoverColor,
+            border: `1px solid ${borderColor}`,
+            borderRadius: '8px',
+            color: popoverForegroundColor,
+          }}
+          labelStyle={{ color: popoverForegroundColor, fontWeight: 600 }}
+          itemStyle={{ color: chart3Color }}
         />
-        <Legend />
-        <Line 
-          type="monotone" 
-          dataKey="disk" 
-          stroke="hsl(48 96% 53%)" 
+        <Line
+          type="monotone"
+          dataKey="disk"
+          stroke={chart3Color}
           strokeWidth={2}
-          name="Disk %" 
           dot={false}
+          activeDot={{ r: 4, fill: chart3Color }}
+          name="Disk %"
         />
       </LineChart>
     </ResponsiveContainer>
   );
 };
-
-export default DiskChart;

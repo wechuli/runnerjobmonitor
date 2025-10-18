@@ -1,101 +1,50 @@
-import React, { useState } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Organization, Repository, WorkflowRun } from './types';
-import OrganizationListPage from './pages/OrganizationListPage';
-import RepositoryListPage from './pages/RepositoryListPage';
-import WorkflowRunListPage from './pages/WorkflowRunListPage';
-import JobDetailPage from './pages/JobDetailPage';
-import LoginPage from './pages/LoginPage';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { LoginPage } from '@/pages/LoginPage';
+import { OrganizationsPage } from '@/pages/OrganizationsPage';
+import { RepositoriesPage } from '@/pages/RepositoriesPage';
+import { WorkflowRunsPage } from '@/pages/WorkflowRunsPage';
+import { JobsPage } from '@/pages/JobsPage';
+import { JobDetailPage } from '@/pages/JobDetailPage';
+import { Toaster } from '@/components/ui/sonner';
 
-type AppStep = 'organizations' | 'repositories' | 'runs' | 'jobs';
+const ProtectedRoutes = () => {
+  const { isAuthenticated } = useAuth();
 
-const AppContent: React.FC = () => {
-  const { user, isLoading } = useAuth();
-  const [step, setStep] = useState<AppStep>('organizations');
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
-  const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null);
-  const [selectedRun, setSelectedRun] = useState<WorkflowRun | null>(null);
-
-  const handleSelectOrganization = (org: Organization) => {
-    setSelectedOrganization(org);
-    setStep('repositories');
-  };
-
-  const handleSelectRepository = (repo: Repository) => {
-    setSelectedRepository(repo);
-    setStep('runs');
-  };
-
-  const handleSelectRun = (run: WorkflowRun) => {
-    setSelectedRun(run);
-    setStep('jobs');
-  };
-
-  const handleBackToOrganizations = () => {
-    setSelectedOrganization(null);
-    setSelectedRepository(null);
-    setSelectedRun(null);
-    setStep('organizations');
-  };
-
-  const handleBackToRepositories = () => {
-    setSelectedRepository(null);
-    setSelectedRun(null);
-    setStep('repositories');
-  };
-
-  const handleBackToRuns = () => {
-    setSelectedRun(null);
-    setStep('runs');
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
+  if (!isAuthenticated) {
     return <LoginPage />;
   }
 
   return (
-    <>
-      {step === 'organizations' && (
-        <OrganizationListPage onSelectOrganization={handleSelectOrganization} />
-      )}
-      {step === 'repositories' && selectedOrganization && (
-        <RepositoryListPage
-          organization={selectedOrganization}
-          onSelectRepository={handleSelectRepository}
-          onBack={handleBackToOrganizations}
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<OrganizationsPage />} />
+        <Route path="/orgs/:org/repos" element={<RepositoriesPage />} />
+        <Route path="/orgs/:org/repos/:repo/runs" element={<WorkflowRunsPage />} />
+        <Route path="/orgs/:org/repos/:repo/runs/:runId/jobs" element={<JobsPage />} />
+        <Route
+          path="/orgs/:org/repos/:repo/runs/:runId/jobs/:jobId"
+          element={<JobDetailPage />}
         />
-      )}
-      {step === 'runs' && selectedRepository && (
-        <WorkflowRunListPage
-          repository={selectedRepository}
-          onSelectRun={handleSelectRun}
-          onBack={handleBackToRepositories}
-        />
-      )}
-      {step === 'jobs' && selectedRun && (
-        <JobDetailPage workflowRun={selectedRun} onBack={handleBackToRuns} />
-      )}
-    </>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   );
 };
 
-const App: React.FC = () => {
+function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <ProtectedRoutes />
+          <Toaster />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
-};
+}
 
 export default App;

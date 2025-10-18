@@ -1,255 +1,402 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { fetchJobDetails, analyzeJob } from '@/services/api';
+import type { JobDetails, AnalysisResult } from '@/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { WorkflowRun, Job, JobDetail, MetricChartData } from '@/types';
-import { api } from '@/services/api';
-import Layout from '@/components/Layout';
-import Sidebar from '@/components/Sidebar';
-import CpuChart from '@/components/charts/CpuChart';
-import MemoryChart from '@/components/charts/MemoryChart';
-import DiskChart from '@/components/charts/DiskChart';
-import LogViewer from '@/components/LogViewer';
-import GeminiAnalysisView from '@/components/GeminiAnalysisView';
-import { Loader2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import { CpuChart } from '@/components/charts/CpuChart';
+import { MemoryChart } from '@/components/charts/MemoryChart';
+import { DiskChart } from '@/components/charts/DiskChart';
+import { ProcessChart } from '@/components/charts/ProcessChart';
+import { 
+  Brain, 
+  CheckCircle, 
+  XCircle, 
+  Clock,
+  Cpu,
+  Database,
+  HardDrive,
+  Activity,
+  Lightbulb,
+  Warning
+} from '@phosphor-icons/react';
 
-interface JobDetailPageProps {
-  workflowRun: WorkflowRun;
-  onBack: () => void;
-}
-
-const JobDetailPage: React.FC<JobDetailPageProps> = ({ workflowRun, onBack }) => {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJob, setSelectedJob] = useState<JobDetail | null>(null);
+export const JobDetailPage = () => {
+  const { org, repo, runId, jobId } = useParams<{
+    org: string;
+    repo: string;
+    runId: string;
+    jobId: string;
+  }>();
+  
+  const [jobDetails, setJobDetails] = useState<JobDetails | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
-    const fetchJobs = async () => {
+    const loadJobDetails = async () => {
+      if (!jobId) return;
       try {
-        setLoading(true);
-        const data = await api.getJobsForRun(workflowRun.id.toString());
-        setJobs(data);
-        setError(null);
-        
-        // Auto-select the first job if available
-        if (data.length > 0) {
-          handleSelectJob(data[0].id);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load jobs');
+        const data = await fetchJobDetails(Number(jobId));
+        setJobDetails(data);
+      } catch (error) {
+        console.error('Failed to fetch job details:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchJobs();
-  }, [workflowRun]);
+    loadJobDetails();
+  }, [jobId]);
 
-  const handleSelectJob = async (jobId: number) => {
+  const handleAnalyze = async () => {
+    if (!jobId) return;
+    setAnalyzing(true);
     try {
-      setLoadingDetail(true);
-      const detail = await api.getJobDetail(jobId);
-      setSelectedJob(detail);
-    } catch (err) {
-      console.error('Failed to load job details:', err);
+      const result = await analyzeJob(Number(jobId));
+      setAnalysis(result);
+    } catch (error) {
+      console.error('Failed to analyze job:', error);
     } finally {
-      setLoadingDetail(false);
+      setAnalyzing(false);
     }
   };
 
-  const formatMetricsForChart = (detail: JobDetail): MetricChartData[] => {
-    return detail.metrics.map((m) => ({
-      timestamp: new Date(m.timestamp).getTime(),
-      cpu: m.cpuUsagePercent || 0,
-      memory: m.memoryUsagePercent || 0,
-      disk: m.diskUsagePercent || 0,
-    }));
+  const getStatusIcon = () => {
+    if (!jobDetails) return null;
+    const { job } = jobDetails;
+    
+    if (job.status === 'in_progress') {
+      return <Clock size={24} className="text-accent animate-pulse" />;
+    }
+    if (job.conclusion === 'success') {
+      return <CheckCircle size={24} weight="fill" className="text-chart-2" />;
+    }
+    if (job.conclusion === 'failure') {
+      return <XCircle size={24} weight="fill" className="text-destructive" />;
+    }
+    return null;
   };
 
-  const getStatusVariant = (conclusion: string | null): 'success' | 'destructive' | 'warning' => {
-    if (conclusion === 'success') return 'success';
-    if (conclusion === 'failure') return 'destructive';
-    return 'warning';
+  const getStatusBadge = () => {
+    if (!jobDetails) return null;
+    const { job } = jobDetails;
+    
+    if (job.status === 'in_progress') {
+      return <Badge variant="secondary" className="text-base px-3 py-1">In Progress</Badge>;
+    }
+    if (job.conclusion === 'success') {
+      return <Badge className="bg-chart-2 text-white hover:bg-chart-2 text-base px-3 py-1">Success</Badge>;
+    }
+    if (job.conclusion === 'failure') {
+      return <Badge variant="destructive" className="text-base px-3 py-1">Failure</Badge>;
+    }
+    return null;
   };
 
-  const sidebar = (
-    <Sidebar title="Jobs" onBack={onBack}>
-      {loading ? (
-        <div className="flex items-center justify-center p-4">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {jobs.map((job) => (
-            <button
-              key={job.id}
-              onClick={() => handleSelectJob(job.id)}
-              className={`w-full text-left p-3 rounded-md border transition-colors ${
-                selectedJob?.id === job.id
-                  ? 'bg-primary/10 border-primary'
-                  : 'bg-background border-border hover:bg-muted'
-              }`}
-            >
-              <p className="font-medium text-sm truncate mb-1">{job.name}</p>
-              <Badge variant={getStatusVariant(job.conclusion)}>
-                {job.conclusion || job.status}
-              </Badge>
-            </button>
-          ))}
-        </div>
-      )}
-    </Sidebar>
-  );
+  const getDuration = () => {
+    if (!jobDetails) return '';
+    const { job } = jobDetails;
+    const start = new Date(job.started_at);
+    const end = job.completed_at ? new Date(job.completed_at) : new Date();
+    const durationMs = end.getTime() - start.getTime();
+    const minutes = Math.floor(durationMs / 60000);
+    const seconds = Math.floor((durationMs % 60000) / 1000);
+    return `${minutes}m ${seconds}s`;
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'high':
+        return 'text-destructive';
+      case 'medium':
+        return 'text-chart-3';
+      case 'low':
+        return 'text-chart-2';
+      default:
+        return 'text-muted-foreground';
+    }
+  };
+
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'high':
+        return <Warning size={20} weight="fill" className="text-destructive" />;
+      case 'medium':
+        return <Warning size={20} className="text-chart-3" />;
+      case 'low':
+        return <Lightbulb size={20} className="text-chart-2" />;
+      default:
+        return <Lightbulb size={20} className="text-muted-foreground" />;
+    }
+  };
 
   if (loading) {
     return (
-      <Layout sidebar={sidebar}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            <p className="mt-4 text-muted-foreground">Loading jobs...</p>
-          </div>
+      <div>
+        <Breadcrumb className="mb-6">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Organizations</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/orgs/${org}/repos`}>{org}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/orgs/${org}/repos/${repo}/runs`}>
+                {repo}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/orgs/${org}/repos/${repo}/runs/${runId}/jobs`}>
+                Run #{runId}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Job {jobId}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-1/2" />
+            </CardHeader>
+          </Card>
         </div>
-      </Layout>
+      </div>
     );
   }
 
-  if (error) {
-    return (
-      <Layout sidebar={sidebar}>
-        <div className="bg-destructive/10 border border-destructive/50 text-destructive px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      </Layout>
-    );
+  if (!jobDetails) {
+    return <div>Job not found</div>;
   }
 
-  if (jobs.length === 0) {
-    return (
-      <Layout sidebar={sidebar}>
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
-          No jobs found for this workflow run.
-        </div>
-      </Layout>
-    );
-  }
+  const { job, metrics, logs } = jobDetails;
 
   return (
-    <Layout sidebar={sidebar}>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{workflowRun.name}</h1>
-          <p className="text-muted-foreground mt-2">
-            Job details and resource metrics
-          </p>
-        </div>
+    <div>
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Organizations</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/orgs/${org}/repos`}>{org}</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/orgs/${org}/repos/${repo}/runs`}>
+              {repo}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/orgs/${org}/repos/${repo}/runs/${runId}/jobs`}>
+              Run #{runId}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{job.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
-        {loadingDetail ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-              <p className="mt-4 text-muted-foreground">Loading job details...</p>
-            </div>
-          </div>
-        ) : selectedJob ? (
-          <div className="space-y-6">
-            {/* Job Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Job Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Status</p>
-                    <Badge variant={getStatusVariant(selectedJob.conclusion)} className="mt-1">
-                      {selectedJob.conclusion || selectedJob.status}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Started At</p>
-                    <p className="text-sm mt-1">
-                      {selectedJob.startedAt
-                        ? new Date(selectedJob.startedAt).toLocaleString()
-                        : 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Completed At</p>
-                    <p className="text-sm mt-1">
-                      {selectedJob.completedAt
-                        ? new Date(selectedJob.completedAt).toLocaleString()
-                        : 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Branch</p>
-                    <p className="text-sm mt-1">{selectedJob.branch || 'N/A'}</p>
-                  </div>
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4">
+              <div className="mt-1">{getStatusIcon()}</div>
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <CardTitle className="text-2xl">{job.name}</CardTitle>
+                  {getStatusBadge()}
                 </div>
-              </CardContent>
-            </Card>
+                <CardDescription className="text-base">
+                  Runner: {job.runner_name} • Duration: {getDuration()} • Job ID: {job.id}
+                </CardDescription>
+              </div>
+            </div>
+            <Button
+              onClick={handleAnalyze}
+              disabled={analyzing}
+              className="gap-2"
+              size="lg"
+            >
+              {analyzing ? (
+                <>
+                  <Clock size={20} className="animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Brain size={20} weight="fill" />
+                  Analyze Job
+                </>
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
 
-            {/* Resource Metrics - Separate Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">CPU Usage</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CpuChart data={formatMetricsForChart(selectedJob)} />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Memory Usage</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <MemoryChart data={formatMetricsForChart(selectedJob)} />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Disk Usage</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DiskChart data={formatMetricsForChart(selectedJob)} />
-                </CardContent>
-              </Card>
+      {analysis && (
+        <Card className="mb-6 border-accent">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain size={24} weight="fill" className="text-accent" />
+              AI Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground mb-2">Summary</h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {analysis.summary}
+              </p>
             </div>
 
-            {/* Logs and AI Analysis */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Job Logs</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <LogViewer logUrl={selectedJob.logUrl} />
-                </CardContent>
-              </Card>
+            <Separator />
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>AI Analysis</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <GeminiAnalysisView jobId={selectedJob.id} />
-                </CardContent>
-              </Card>
+            <div>
+              <h4 className="text-sm font-semibold text-foreground mb-3">Key Insights</h4>
+              <div className="space-y-3">
+                {analysis.insights.map((insight, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+                  >
+                    <div className="mt-0.5">{getSeverityIcon(insight.severity)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-foreground">
+                          {insight.metric}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={getSeverityColor(insight.severity)}
+                        >
+                          {insight.severity}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {insight.observation}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
-            Select a job to view details
-          </div>
-        )}
+
+            <Separator />
+
+            <div>
+              <h4 className="text-sm font-semibold text-foreground mb-3">
+                Recommendations
+              </h4>
+              <ul className="space-y-2">
+                {analysis.recommendations.map((rec, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm">
+                    <Lightbulb
+                      size={16}
+                      weight="fill"
+                      className="text-accent mt-0.5 flex-shrink-0"
+                    />
+                    <span className="text-muted-foreground">{rec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Cpu size={20} className="text-chart-1" />
+              CPU Usage
+            </CardTitle>
+            <CardDescription>Processor utilization over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CpuChart data={metrics} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database size={20} className="text-chart-2" />
+              Memory Usage
+            </CardTitle>
+            <CardDescription>RAM consumption over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MemoryChart data={metrics} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HardDrive size={20} className="text-chart-3" />
+              Disk Usage
+            </CardTitle>
+            <CardDescription>Storage utilization over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DiskChart data={metrics} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity size={20} className="text-chart-4" />
+              Top Process Metrics
+            </CardTitle>
+            <CardDescription>Primary process resource usage</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProcessChart data={metrics} />
+          </CardContent>
+        </Card>
       </div>
-    </Layout>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Job Logs</CardTitle>
+          <CardDescription>Complete execution log output</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/50 p-4">
+            <pre className="font-mono text-xs text-foreground whitespace-pre-wrap">
+              {logs}
+            </pre>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
-
-export default JobDetailPage;

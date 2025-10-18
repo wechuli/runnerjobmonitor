@@ -1,62 +1,71 @@
-import React from 'react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
-import { MetricChartData } from '@/types';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import type { MetricDataPoint } from '@/types';
 
 interface CpuChartProps {
-  data: MetricChartData[];
+  data: MetricDataPoint[];
 }
 
-const CpuChart: React.FC<CpuChartProps> = ({ data }) => {
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-        No CPU metrics data available
-      </div>
-    );
-  }
+export const CpuChart = ({ data }: CpuChartProps) => {
+  const chartData = data.map((point) => ({
+    time: new Date(point.timestamp.replace(' ', 'T')).toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false 
+    }),
+    cpu: point.system.cpu.usage_percent,
+  }));
+
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  const mutedForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim();
+  const popoverColor = getComputedStyle(document.documentElement).getPropertyValue('--popover').trim();
+  const popoverForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--popover-foreground').trim();
+  const chart1Color = getComputedStyle(document.documentElement).getPropertyValue('--chart-1').trim();
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+      <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={borderColor} opacity={0.3} />
         <XAxis
-          dataKey="timestamp"
-          tickFormatter={(value) => {
-            const date = new Date(value);
-            return date.toLocaleTimeString();
-          }}
-          className="text-xs"
+          dataKey="time"
+          fill={mutedForegroundColor}
+          fontSize={12}
+          tickLine={false}
+          axisLine={{ stroke: borderColor }}
         />
-        <YAxis 
-          label={{ value: 'CPU Usage (%)', angle: -90, position: 'insideLeft' }}
-          className="text-xs"
+        <YAxis
+          fill={mutedForegroundColor}
+          fontSize={12}
+          tickLine={false}
+          axisLine={{ stroke: borderColor }}
+          domain={[0, 100]}
+          label={{ 
+            value: 'CPU %', 
+            angle: -90, 
+            position: 'insideLeft',
+            style: { fill: mutedForegroundColor }
+          }}
         />
         <Tooltip
-          labelFormatter={(value) => new Date(value).toLocaleString()}
-          formatter={(value: number) => [`${value.toFixed(2)}%`, 'CPU']}
-          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+          contentStyle={{
+            backgroundColor: popoverColor,
+            border: `1px solid ${borderColor}`,
+            borderRadius: '8px',
+            color: popoverForegroundColor,
+          }}
+          labelStyle={{ color: popoverForegroundColor, fontWeight: 600 }}
+          itemStyle={{ color: chart1Color }}
         />
-        <Legend />
-        <Line 
-          type="monotone" 
-          dataKey="cpu" 
-          stroke="hsl(221.2 83.2% 53.3%)" 
+        <Line
+          type="monotone"
+          dataKey="cpu"
+          stroke={chart1Color}
           strokeWidth={2}
-          name="CPU %" 
           dot={false}
+          activeDot={{ r: 4, fill: chart1Color }}
+          name="CPU %"
         />
       </LineChart>
     </ResponsiveContainer>
   );
 };
-
-export default CpuChart;
