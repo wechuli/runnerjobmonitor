@@ -20,62 +20,70 @@ export const ProcessChart = ({ data }: ProcessChartProps) => {
     };
   });
 
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  const mutedForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim();
+  const popoverColor = getComputedStyle(document.documentElement).getPropertyValue('--popover').trim();
+  const popoverForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--popover-foreground').trim();
+  const foregroundColor = getComputedStyle(document.documentElement).getPropertyValue('--foreground').trim();
+  const chart4Color = getComputedStyle(document.documentElement).getPropertyValue('--chart-4').trim();
+  const chart5Color = getComputedStyle(document.documentElement).getPropertyValue('--chart-5').trim();
+
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
+        <CartesianGrid strokeDasharray="3 3" stroke={borderColor} opacity={0.3} />
         <XAxis
           dataKey="time"
-          className="fill-muted-foreground"
+          fill={mutedForegroundColor}
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: 'hsl(var(--border))' }}
+          axisLine={{ stroke: borderColor }}
         />
         <YAxis
-          className="fill-muted-foreground"
+          fill={mutedForegroundColor}
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: 'hsl(var(--border))' }}
+          axisLine={{ stroke: borderColor }}
           domain={[0, 100]}
           label={{ 
             value: 'Process %', 
             angle: -90, 
             position: 'insideLeft',
-            style: { fill: 'hsl(var(--muted-foreground))' }
+            style: { fill: mutedForegroundColor }
           }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: 'hsl(var(--popover))',
-            border: '1px solid hsl(var(--border))',
+            backgroundColor: popoverColor,
+            border: `1px solid ${borderColor}`,
             borderRadius: '8px',
-            color: 'hsl(var(--popover-foreground))',
+            color: popoverForegroundColor,
           }}
-          labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 600 }}
+          labelStyle={{ color: popoverForegroundColor, fontWeight: 600 }}
         />
         <Legend 
           wrapperStyle={{ 
-            color: 'hsl(var(--foreground))',
+            color: foregroundColor,
             paddingTop: '10px'
           }}
         />
         <Line
           type="monotone"
           dataKey="cpu"
-          stroke="hsl(var(--chart-4))"
+          stroke={chart4Color}
           strokeWidth={2}
           dot={false}
           name="CPU %"
-          activeDot={{ r: 4, fill: 'hsl(var(--chart-4))' }}
+          activeDot={{ r: 4, fill: chart4Color }}
         />
         <Line
           type="monotone"
           dataKey="memory"
-          stroke="hsl(var(--chart-5))"
+          stroke={chart5Color}
           strokeWidth={2}
           dot={false}
           name="Memory %"
-          activeDot={{ r: 4, fill: 'hsl(var(--chart-5))' }}
+          activeDot={{ r: 4, fill: chart5Color }}
         />
       </LineChart>
     </ResponsiveContainer>

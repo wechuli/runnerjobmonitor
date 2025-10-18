@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
+import { useKV } from '@github/spark/hooks';
 
 type Theme = 'light' | 'dark';
 
@@ -10,34 +11,25 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>('dark');
-
-  useEffect(() => {
-    const storedTheme = localStorage.getItem('gh-runner-theme') as Theme;
-    if (storedTheme) {
-      setTheme(storedTheme);
-    } else {
-      setTheme('dark');
-      localStorage.setItem('gh-runner-theme', 'dark');
-    }
-  }, []);
+  const [theme, setTheme] = useKV<Theme>('gh-runner-theme', 'dark');
+  const currentTheme = theme || 'dark';
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
+    if (currentTheme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
-    localStorage.setItem('gh-runner-theme', theme);
-  }, [theme]);
+  }, [currentTheme]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+    const newTheme: Theme = currentTheme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: currentTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

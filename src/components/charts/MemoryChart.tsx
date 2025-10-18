@@ -16,45 +16,51 @@ export const MemoryChart = ({ data }: MemoryChartProps) => {
     memory: point.system.memory.usage_percent,
   }));
 
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  const mutedForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim();
+  const popoverColor = getComputedStyle(document.documentElement).getPropertyValue('--popover').trim();
+  const popoverForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--popover-foreground').trim();
+  const chart2Color = getComputedStyle(document.documentElement).getPropertyValue('--chart-2').trim();
+
   return (
     <ResponsiveContainer width="100%" height={300}>
       <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
+        <CartesianGrid strokeDasharray="3 3" stroke={borderColor} opacity={0.3} />
         <XAxis
           dataKey="time"
-          className="fill-muted-foreground"
+          fill={mutedForegroundColor}
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: 'hsl(var(--border))' }}
+          axisLine={{ stroke: borderColor }}
         />
         <YAxis
-          className="fill-muted-foreground"
+          fill={mutedForegroundColor}
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: 'hsl(var(--border))' }}
+          axisLine={{ stroke: borderColor }}
           domain={[0, 100]}
           label={{ 
             value: 'Memory %', 
             angle: -90, 
             position: 'insideLeft',
-            style: { fill: 'hsl(var(--muted-foreground))' }
+            style: { fill: mutedForegroundColor }
           }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: 'hsl(var(--popover))',
-            border: '1px solid hsl(var(--border))',
+            backgroundColor: popoverColor,
+            border: `1px solid ${borderColor}`,
             borderRadius: '8px',
-            color: 'hsl(var(--popover-foreground))',
+            color: popoverForegroundColor,
           }}
-          labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 600 }}
-          itemStyle={{ color: 'hsl(var(--chart-2))' }}
+          labelStyle={{ color: popoverForegroundColor, fontWeight: 600 }}
+          itemStyle={{ color: chart2Color }}
         />
         <Area
           type="monotone"
           dataKey="memory"
-          stroke="hsl(var(--chart-2))"
-          fill="hsl(var(--chart-2))"
+          stroke={chart2Color}
+          fill={chart2Color}
           fillOpacity={0.3}
           strokeWidth={2}
           name="Memory %"

@@ -16,47 +16,53 @@ export const CpuChart = ({ data }: CpuChartProps) => {
     cpu: point.system.cpu.usage_percent,
   }));
 
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  const mutedForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim();
+  const popoverColor = getComputedStyle(document.documentElement).getPropertyValue('--popover').trim();
+  const popoverForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--popover-foreground').trim();
+  const chart1Color = getComputedStyle(document.documentElement).getPropertyValue('--chart-1').trim();
+
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
+        <CartesianGrid strokeDasharray="3 3" stroke={borderColor} opacity={0.3} />
         <XAxis
           dataKey="time"
-          className="fill-muted-foreground"
+          fill={mutedForegroundColor}
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: 'hsl(var(--border))' }}
+          axisLine={{ stroke: borderColor }}
         />
         <YAxis
-          className="fill-muted-foreground"
+          fill={mutedForegroundColor}
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: 'hsl(var(--border))' }}
+          axisLine={{ stroke: borderColor }}
           domain={[0, 100]}
           label={{ 
             value: 'CPU %', 
             angle: -90, 
             position: 'insideLeft',
-            style: { fill: 'hsl(var(--muted-foreground))' }
+            style: { fill: mutedForegroundColor }
           }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: 'hsl(var(--popover))',
-            border: '1px solid hsl(var(--border))',
+            backgroundColor: popoverColor,
+            border: `1px solid ${borderColor}`,
             borderRadius: '8px',
-            color: 'hsl(var(--popover-foreground))',
+            color: popoverForegroundColor,
           }}
-          labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 600 }}
-          itemStyle={{ color: 'hsl(var(--chart-1))' }}
+          labelStyle={{ color: popoverForegroundColor, fontWeight: 600 }}
+          itemStyle={{ color: chart1Color }}
         />
         <Line
           type="monotone"
           dataKey="cpu"
-          stroke="hsl(var(--chart-1))"
+          stroke={chart1Color}
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 4, fill: 'hsl(var(--chart-1))' }}
+          activeDot={{ r: 4, fill: chart1Color }}
           name="CPU %"
         />
       </LineChart>
