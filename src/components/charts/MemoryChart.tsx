@@ -19,22 +19,22 @@ export const MemoryChart = ({ data }: MemoryChartProps) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+        <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
         <XAxis
           dataKey="time"
-          stroke="hsl(var(--muted-foreground))"
+          className="fill-muted-foreground"
           fontSize={12}
           tickLine={false}
           axisLine={{ stroke: 'hsl(var(--border))' }}
         />
         <YAxis
-          stroke="hsl(var(--muted-foreground))"
+          className="fill-muted-foreground"
           fontSize={12}
           tickLine={false}
           axisLine={{ stroke: 'hsl(var(--border))' }}
           domain={[0, 100]}
           label={{ 
-            value: 'Memory Usage (%)', 
+            value: 'Memory %', 
             angle: -90, 
             position: 'insideLeft',
             style: { fill: 'hsl(var(--muted-foreground))' }
@@ -48,7 +48,7 @@ export const MemoryChart = ({ data }: MemoryChartProps) => {
             color: 'hsl(var(--popover-foreground))',
           }}
           labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 600 }}
-          itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
+          itemStyle={{ color: 'hsl(var(--chart-2))' }}
         />
         <Area
           type="monotone"

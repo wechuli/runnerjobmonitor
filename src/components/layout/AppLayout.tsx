@@ -1,10 +1,12 @@
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
-import { GithubLogo, SignOut } from '@phosphor-icons/react';
+import { GithubLogo, SignOut, Moon, Sun } from '@phosphor-icons/react';
 
 export const AppLayout = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,6 +35,24 @@ export const AppLayout = () => {
                 <span className="text-sm font-medium text-foreground">{user.login}</span>
               </div>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="gap-2"
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun size={16} />
+                  Light
+                </>
+              ) : (
+                <>
+                  <Moon size={16} />
+                  Dark
+                </>
+              )}
+            </Button>
             <Button
               variant="ghost"
               size="sm"

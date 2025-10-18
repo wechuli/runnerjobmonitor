@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/pages/LoginPage';
 import { OrganizationsPage } from '@/pages/OrganizationsPage';
@@ -35,12 +36,14 @@ const ProtectedRoutes = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <ProtectedRoutes />
-        <Toaster />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <ProtectedRoutes />
+          <Toaster />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
