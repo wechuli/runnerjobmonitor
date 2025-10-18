@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Button, Spinner, Text, Alert, AlertIcon } from '@chakra-ui/react';
-import { api } from '../services/api';
+import { Button } from '@/components/ui/button';
+import { api } from '@/services/api';
+import { Loader2 } from 'lucide-react';
 
 interface GeminiAnalysisViewProps {
   jobId: number;
@@ -28,85 +29,76 @@ const GeminiAnalysisView: React.FC<GeminiAnalysisViewProps> = ({ jobId }) => {
     return text.split('\n').map((line, index) => {
       if (line.startsWith('### ')) {
         return (
-          <Text key={index} fontSize="xl" fontWeight="bold" mt={4} mb={2}>
+          <h3 key={index} className="text-xl font-bold mt-4 mb-2">
             {line.substring(4)}
-          </Text>
+          </h3>
         );
       }
       if (line.startsWith('## ')) {
         return (
-          <Text key={index} fontSize="2xl" fontWeight="bold" mt={6} mb={3}>
+          <h2 key={index} className="text-2xl font-bold mt-6 mb-3">
             {line.substring(3)}
-          </Text>
+          </h2>
         );
       }
       if (line.startsWith('**') && line.endsWith('**')) {
         return (
-          <Text key={index} fontWeight="bold" my={2}>
+          <p key={index} className="font-bold my-2">
             {line.substring(2, line.length - 2)}
-          </Text>
+          </p>
         );
       }
       if (line.startsWith('* ') || line.startsWith('- ')) {
         return (
-          <Text key={index} ml={4} my={1}>
+          <p key={index} className="ml-4 my-1">
             • {line.substring(2)}
-          </Text>
+          </p>
         );
       }
       if (line.trim() === '') {
-        return <Box key={index} h={2} />;
+        return <div key={index} className="h-2" />;
       }
       return (
-        <Text key={index} my={1}>
+        <p key={index} className="my-1">
           {line}
-        </Text>
+        </p>
       );
     });
   };
 
   return (
-    <Box>
+    <div>
       {!analysis && !loading && (
-        <Box>
-          <Text mb={4} color="gray.600">
+        <div>
+          <p className="mb-4 text-muted-foreground">
             Use Gemini AI to analyze this job's metrics and logs to identify performance bottlenecks
             and get actionable recommendations.
-          </Text>
-          <Button colorScheme="blue" onClick={handleAnalyze}>
+          </p>
+          <Button onClick={handleAnalyze}>
             Analyze with Gemini
           </Button>
-        </Box>
+        </div>
       )}
 
       {loading && (
-        <Box textAlign="center" py={8}>
-          <Spinner size="lg" />
-          <Text mt={4}>Analyzing job data with Gemini AI...</Text>
-        </Box>
+        <div className="text-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Analyzing job data with Gemini AI...</p>
+        </div>
       )}
 
       {error && (
-        <Alert status="error">
-          <AlertIcon />
+        <div className="bg-destructive/10 border border-destructive/50 text-destructive px-4 py-3 rounded-lg">
           {error}
-        </Alert>
+        </div>
       )}
 
       {analysis && (
-        <Box
-          bg="gray.50"
-          p={6}
-          borderRadius="md"
-          maxH="500px"
-          overflowY="auto"
-          border="1px"
-          borderColor="gray.200"
-        >
+        <div className="bg-muted/50 p-6 rounded-md max-h-[500px] overflow-y-auto border">
           {renderMarkdown(analysis)}
-        </Box>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 
