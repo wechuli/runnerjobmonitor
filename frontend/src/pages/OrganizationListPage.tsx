@@ -1,16 +1,63 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Organization } from '@/types';
 import { dummyOrganizations } from '@/data/dummyData';
+import { api } from '@/services/api';
 import Layout from '@/components/Layout';
+import { Loader2 } from 'lucide-react';
 
 interface OrganizationListPageProps {
   onSelectOrganization: (org: Organization) => void;
 }
 
 const OrganizationListPage: React.FC<OrganizationListPageProps> = ({ onSelectOrganization }) => {
-  const [organizations] = useState<Organization[]>(dummyOrganizations);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getOrganizations();
+        setOrganizations(data);
+        setError(null);
+      } catch (err) {
+        // Fallback to dummy data if API fails
+        console.warn('Failed to fetch organizations from API, using dummy data:', err);
+        setOrganizations(dummyOrganizations);
+        setError(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, []);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-4 text-muted-foreground">Loading organizations...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="bg-destructive/10 border border-destructive/50 text-destructive px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
