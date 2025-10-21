@@ -78,6 +78,7 @@
     "devDependencies": {
         "@eslint/js": "^9.21.0",
         "@tailwindcss/postcss": "^4.1.8",
+        "@types/node": "^24.8.1",
         "@types/react": "^19.0.10",
         "@types/react-dom": "^19.0.4",
         "@vitejs/plugin-react": "^4.3.4",
@@ -95,5 +96,8 @@
         "packages": [
             "packages/*"
         ]
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-darwin-arm64": "^4.52.5"
     }
 }
