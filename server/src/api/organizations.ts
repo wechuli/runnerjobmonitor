@@ -1,24 +1,24 @@
-import { Router } from 'express';
-import prisma from '../db';
+import { Router, Request, Response } from "express";
+import AppDataSource from "../data-source";
+import { Installation } from "../entities/Installation";
 
 const router = Router();
 
 // GET /api/organizations - List all installations (organizations) for the authenticated user
-router.get('/', async (req, res) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     // In a real implementation, you would get the userId from the session/JWT
     // For now, we'll return all installations
-    const installations = await prisma.installation.findMany({
-      select: {
-        id: true,
-        githubInstallationId: true,
-        accountLogin: true,
-        accountType: true,
-        avatarUrl: true,
-      },
-      orderBy: {
-        accountLogin: 'asc',
-      },
+    const installationRepo = AppDataSource.getRepository(Installation);
+    const installations = await installationRepo.find({
+      select: [
+        "id",
+        "githubInstallationId",
+        "accountLogin",
+        "accountType",
+        "avatarUrl",
+      ],
+      order: { accountLogin: "ASC" },
     });
 
     const organizations = installations.map((inst) => ({
@@ -30,8 +30,8 @@ router.get('/', async (req, res) => {
 
     res.json(organizations);
   } catch (error) {
-    console.error('Error fetching organizations:', error);
-    res.status(500).json({ error: 'Failed to fetch organizations' });
+    console.error("Error fetching organizations:", error);
+    res.status(500).json({ error: "Failed to fetch organizations" });
   }
 });
 

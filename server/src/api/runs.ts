@@ -1,25 +1,30 @@
-import { Router } from 'express';
-import prisma from '../db';
-import { GitHubService } from '../services/github.service';
+import { Router, Request, Response } from "express";
+import AppDataSource from "../data-source";
+import { Installation } from "../entities/Installation";
+import { Job } from "../entities/Job";
+import { GitHubService } from "../services/github.service";
 
 const router = Router();
 
 // GET /api/repos/:owner/:repo/runs - List workflow runs for a repository
-router.get('/:owner/:repo/runs', async (req, res) => {
+router.get("/:owner/:repo/runs", async (req: Request, res: Response) => {
   try {
     const { owner, repo } = req.params;
 
     // Find the installation for this organization
-    const installation = await prisma.installation.findFirst({
+    const installationRepo = AppDataSource.getRepository(Installation);
+    const installation = await installationRepo.findOne({
       where: { accountLogin: owner },
     });
 
     if (!installation) {
-      return res.status(404).json({ error: 'Installation not found' });
+      return res.status(404).json({ error: "Installation not found" });
     }
 
     // Fetch workflow runs from GitHub
-    const githubService = new GitHubService(parseInt(installation.githubInstallationId));
+    const githubService = new GitHubService(
+      parseInt(installation.githubInstallationId)
+    );
     const runs = await githubService.getWorkflowRuns(owner, repo);
 
     const workflowRuns = runs.map((run: any) => ({
@@ -36,37 +41,36 @@ router.get('/:owner/:repo/runs', async (req, res) => {
 
     res.json(workflowRuns);
   } catch (error) {
-    console.error('Error fetching workflow runs:', error);
-    res.status(500).json({ error: 'Failed to fetch workflow runs' });
+    console.error("Error fetching workflow runs:", error);
+    res.status(500).json({ error: "Failed to fetch workflow runs" });
   }
 });
 
 // GET /api/runs/:runId/jobs - List jobs for a specific workflow run
-router.get('/:runId/jobs', async (req, res) => {
+router.get("/:runId/jobs", async (req: Request, res: Response) => {
   try {
     const { runId } = req.params;
 
     // First, try to find jobs in our database
-    const jobs = await prisma.job.findMany({
+    const jobRepo = AppDataSource.getRepository(Job);
+    const jobs = await jobRepo.find({
       where: { githubRunId: runId },
-      select: {
-        id: true,
-        githubJobId: true,
-        githubRunId: true,
-        name: true,
-        status: true,
-        conclusion: true,
-        repository: true,
-        branch: true,
-        commitHash: true,
-        workflowName: true,
-        startedAt: true,
-        completedAt: true,
-        logUrl: true,
-      },
-      orderBy: {
-        startedAt: 'asc',
-      },
+      select: [
+        "id",
+        "githubJobId",
+        "githubRunId",
+        "name",
+        "status",
+        "conclusion",
+        "repository",
+        "branch",
+        "commitHash",
+        "workflowName",
+        "startedAt",
+        "completedAt",
+        "logUrl",
+      ],
+      order: { startedAt: "ASC" as any },
     });
 
     // If we have jobs in the database, return them
@@ -79,8 +83,8 @@ router.get('/:runId/jobs', async (req, res) => {
     // For now, return empty array if no jobs found
     res.json([]);
   } catch (error) {
-    console.error('Error fetching jobs:', error);
-    res.status(500).json({ error: 'Failed to fetch jobs' });
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({ error: "Failed to fetch jobs" });
   }
 });
 

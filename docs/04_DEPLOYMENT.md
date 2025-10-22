@@ -16,11 +16,13 @@ This guide covers deploying the GitHub Actions Runner Observability Tool to prod
 ### 1. Database
 
 **SQLite** (current setup) is suitable for:
+
 - Development
 - Single-server deployments
 - Low to moderate traffic
 
 **PostgreSQL** is recommended for production:
+
 - Better concurrency handling
 - More robust for high traffic
 - Better backup/restore options
@@ -28,7 +30,8 @@ This guide covers deploying the GitHub Actions Runner Observability Tool to prod
 
 To migrate to PostgreSQL:
 
-1. Update `backend/prisma/schema.prisma`:
+1. Update your `.env`/configuration to point DATABASE_URL at PostgreSQL:
+
 ```prisma
 datasource db {
   provider = "postgresql"
@@ -37,14 +40,16 @@ datasource db {
 ```
 
 2. Update environment variable:
+
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/dbname"
 ```
 
-3. Run migrations:
+3. Run migrations (TypeORM):
+
 ```bash
-cd backend
-npx prisma migrate dev
+cd server
+npx typeorm migration:run
 ```
 
 ### 2. Environment Variables
@@ -79,6 +84,7 @@ FRONTEND_URL=https://your-domain.com
 ```
 
 **Security Best Practices:**
+
 - Never commit `.env` files to version control
 - Use environment-specific files (`.env.production`, `.env.staging`)
 - Use secrets management (AWS Secrets Manager, HashiCorp Vault)
@@ -90,22 +96,26 @@ FRONTEND_URL=https://your-domain.com
 #### Option A: Traditional Server (VPS, EC2, etc.)
 
 1. **Install dependencies:**
+
 ```bash
 cd backend
 npm ci --production
 ```
 
 2. **Build the application:**
+
 ```bash
 npm run build
 ```
 
 3. **Run migrations:**
+
 ```bash
 npx prisma migrate deploy
 ```
 
 4. **Start with PM2 (recommended):**
+
 ```bash
 npm install -g pm2
 pm2 start dist/index.js --name runner-monitor-backend
@@ -114,6 +124,7 @@ pm2 startup
 ```
 
 5. **Configure reverse proxy (nginx):**
+
 ```nginx
 server {
     listen 80;
@@ -133,6 +144,7 @@ server {
 ```
 
 6. **Enable HTTPS with Let's Encrypt:**
+
 ```bash
 sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d api.your-domain.com
@@ -141,6 +153,7 @@ sudo certbot --nginx -d api.your-domain.com
 #### Option B: Docker
 
 1. **Create `backend/Dockerfile`:**
+
 ```dockerfile
 FROM node:18-alpine
 
@@ -162,6 +175,7 @@ CMD ["npm", "start"]
 ```
 
 2. **Build and run:**
+
 ```bash
 docker build -t runner-monitor-backend .
 docker run -p 3001:3001 --env-file .env runner-monitor-backend
@@ -170,6 +184,7 @@ docker run -p 3001:3001 --env-file .env runner-monitor-backend
 #### Option C: Cloud Platforms
 
 **Heroku:**
+
 ```bash
 heroku create your-app-name
 heroku addons:create heroku-postgresql:hobby-dev
@@ -177,11 +192,13 @@ git push heroku main
 ```
 
 **Railway:**
+
 - Connect GitHub repository
 - Configure environment variables
 - Deploy automatically on push
 
 **Google Cloud Run:**
+
 ```bash
 gcloud builds submit --tag gcr.io/PROJECT-ID/runner-monitor-backend
 gcloud run deploy --image gcr.io/PROJECT-ID/runner-monitor-backend
@@ -190,6 +207,7 @@ gcloud run deploy --image gcr.io/PROJECT-ID/runner-monitor-backend
 ### 4. Frontend Deployment
 
 1. **Build the frontend:**
+
 ```bash
 cd frontend
 npm run build
@@ -198,24 +216,28 @@ npm run build
 2. **Deploy to static hosting:**
 
 **Vercel:**
+
 ```bash
 npm install -g vercel
 vercel --prod
 ```
 
 **Netlify:**
+
 ```bash
 npm install -g netlify-cli
 netlify deploy --prod --dir=dist
 ```
 
 **AWS S3 + CloudFront:**
+
 ```bash
 aws s3 sync dist/ s3://your-bucket-name/
 aws cloudfront create-invalidation --distribution-id YOUR_DIST_ID --paths "/*"
 ```
 
 **nginx:**
+
 ```nginx
 server {
     listen 80;
@@ -236,6 +258,7 @@ server {
 ### 5. Database Backups
 
 **PostgreSQL automated backups:**
+
 ```bash
 # Create backup script
 #!/bin/bash
@@ -246,6 +269,7 @@ find $BACKUP_DIR -type f -mtime +7 -delete  # Keep 7 days
 ```
 
 **Cron job:**
+
 ```bash
 0 2 * * * /path/to/backup-script.sh
 ```
@@ -253,18 +277,21 @@ find $BACKUP_DIR -type f -mtime +7 -delete  # Keep 7 days
 ### 6. Monitoring
 
 **Application Monitoring:**
+
 - Use PM2 for process monitoring
 - Set up logging (Winston, Pino)
 - Monitor API response times
 - Track error rates
 
 **Infrastructure Monitoring:**
+
 - CPU, memory, disk usage
 - Database performance
 - Network latency
 - SSL certificate expiration
 
 **Tools:**
+
 - DataDog
 - New Relic
 - Prometheus + Grafana
@@ -273,18 +300,21 @@ find $BACKUP_DIR -type f -mtime +7 -delete  # Keep 7 days
 ### 7. Scaling
 
 **Horizontal Scaling:**
+
 1. Deploy multiple backend instances
 2. Use a load balancer (nginx, HAProxy, AWS ALB)
 3. Ensure stateless backend (no in-memory sessions)
 4. Use Redis for shared caching
 
 **Database Scaling:**
+
 1. Set up read replicas
 2. Implement connection pooling
 3. Add database indexes for frequent queries
 4. Consider sharding for very large datasets
 
 **CDN for Frontend:**
+
 - Use CloudFront, Cloudflare, or Fastly
 - Cache static assets
 - Enable gzip/brotli compression
@@ -308,6 +338,7 @@ find $BACKUP_DIR -type f -mtime +7 -delete  # Keep 7 days
 ### 9. Performance Optimization
 
 **Backend:**
+
 - Enable gzip compression
 - Implement caching (Redis)
 - Use database indexes
@@ -316,6 +347,7 @@ find $BACKUP_DIR -type f -mtime +7 -delete  # Keep 7 days
 - Use CDN for static assets
 
 **Frontend:**
+
 - Code splitting
 - Lazy loading
 - Image optimization
@@ -326,6 +358,7 @@ find $BACKUP_DIR -type f -mtime +7 -delete  # Keep 7 days
 ### 10. Continuous Deployment
 
 **GitHub Actions:**
+
 ```yaml
 name: Deploy
 
@@ -338,26 +371,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-      
+          node-version: "18"
+
       - name: Install dependencies
         run: |
           cd backend && npm ci
           cd ../frontend && npm ci
-      
+
       - name: Build
         run: |
           cd backend && npm run build
           cd ../frontend && npm run build
-      
+
       - name: Deploy Backend
         run: |
           # Your deployment script
-          
+
       - name: Deploy Frontend
         run: |
           # Your deployment script
@@ -366,6 +399,7 @@ jobs:
 ### 11. Rollback Strategy
 
 **Quick Rollback:**
+
 1. Keep previous builds
 2. Use blue-green deployment
 3. Maintain database migration history
@@ -373,32 +407,34 @@ jobs:
 5. Document rollback procedures
 
 **Database Migration Rollback:**
+
 ```bash
 npx prisma migrate resolve --rolled-back MIGRATION_NAME
 ```
 
 ### 12. Health Checks
 
-**Endpoint:**
+Use TypeORM's DataSource to run a simple query against the DB:
+
 ```typescript
-app.get('/health', async (req, res) => {
+import AppDataSource from "./src/data-source";
+
+app.get("/health", async (req, res) => {
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await AppDataSource.query("SELECT 1");
     res.json({
-      status: 'healthy',
-      database: 'connected',
-      timestamp: new Date().toISOString()
+      status: "healthy",
+      database: "connected",
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    res.status(503).json({
-      status: 'unhealthy',
-      database: 'disconnected'
-    });
+    res.status(503).json({ status: "unhealthy", database: "disconnected" });
   }
 });
 ```
 
 **Monitoring:**
+
 - Set up uptime monitoring (UptimeRobot, Pingdom)
 - Configure alerts for downtime
 - Monitor response times
@@ -406,6 +442,7 @@ app.get('/health', async (req, res) => {
 ## Support
 
 For deployment issues:
+
 1. Check application logs
 2. Verify environment variables
 3. Test database connectivity

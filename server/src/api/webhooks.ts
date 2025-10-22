@@ -1,56 +1,60 @@
-import { Router } from 'express';
-import { Webhooks } from '@octokit/webhooks';
-import prisma from '../db';
-import { GitHubService } from '../services/github.service';
-import { StorageService } from '../services/storage.service';
+import { Router, Request, Response } from "express";
+import { Webhooks } from "@octokit/webhooks";
+import AppDataSource from "../data-source";
+import { Installation } from "../entities/Installation";
+import { Job } from "../entities/Job";
+import { GitHubService } from "../services/github.service";
+import { StorageService } from "../services/storage.service";
 
 const router = Router();
 
-const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || 'development-secret';
+const WEBHOOK_SECRET =
+  process.env.GITHUB_WEBHOOK_SECRET || "development-secret";
 const webhooks = new Webhooks({
   secret: WEBHOOK_SECRET,
 });
 
 // Handle installation events
-webhooks.on('installation.created', async ({ payload }) => {
-  console.log('GitHub App installed:', payload.installation.id);
+webhooks.on("installation.created", async ({ payload }: any) => {
+  console.log("GitHub App installed:", payload.installation.id);
 
   try {
     const installation = payload.installation;
     const account = installation.account;
 
-    await prisma.installation.create({
-      data: {
-        githubInstallationId: installation.id.toString(),
-        accountLogin: account?.login || 'unknown',
-        accountType: account?.type || 'Organization',
-        avatarUrl: account?.avatar_url || null,
-      },
+    const installationRepo = AppDataSource.getRepository(Installation);
+    const installationRecord = installationRepo.create({
+      githubInstallationId: installation.id.toString(),
+      accountLogin: account?.login || "unknown",
+      accountType: account?.type || "Organization",
+      avatarUrl: account?.avatar_url || null,
     });
+    await installationRepo.save(installationRecord);
 
-    console.log('Installation record created for:', account?.login);
+    console.log("Installation record created for:", account?.login);
   } catch (error) {
-    console.error('Error creating installation record:', error);
+    console.error("Error creating installation record:", error);
   }
 });
 
 // Handle installation deletion
-webhooks.on('installation.deleted', async ({ payload }) => {
-  console.log('GitHub App uninstalled:', payload.installation.id);
+webhooks.on("installation.deleted", async ({ payload }: any) => {
+  console.log("GitHub App uninstalled:", payload.installation.id);
 
   try {
-    await prisma.installation.delete({
-      where: { githubInstallationId: payload.installation.id.toString() },
-    });
+    const installationRepo = AppDataSource.getRepository(Installation);
+    await installationRepo.delete({
+      githubInstallationId: payload.installation.id.toString(),
+    } as any);
 
-    console.log('Installation record deleted');
+    console.log("Installation record deleted");
   } catch (error) {
-    console.error('Error deleting installation record:', error);
+    console.error("Error deleting installation record:", error);
   }
 });
 
 // Handle workflow_job events
-webhooks.on('workflow_job', async ({ payload }) => {
+webhooks.on("workflow_job", async ({ payload }: any) => {
   const job = payload.workflow_job;
   const action = payload.action;
   const repository = payload.repository;
@@ -59,17 +63,20 @@ webhooks.on('workflow_job', async ({ payload }) => {
 
   try {
     // Find the installation for this repository
-    const [owner] = repository.full_name.split('/');
-    const installation = await prisma.installation.findFirst({
+    const [owner] = repository.full_name.split("/");
+    const installationRepo = AppDataSource.getRepository(Installation);
+    const installation = await installationRepo.findOne({
       where: { accountLogin: owner },
     });
 
     if (!installation) {
-      console.warn(`No installation found for repository ${repository.full_name}`);
+      console.warn(
+        `No installation found for repository ${repository.full_name}`
+      );
       return;
     }
 
-    if (action === 'queued' || action === 'in_progress') {
+    if (action === "queued" || action === "in_progress") {
       // Create or update job record
       const jobData = {
         githubJobId: job.id.toString(),
@@ -81,22 +88,37 @@ webhooks.on('workflow_job', async ({ payload }) => {
         commitHash: job.head_sha || null,
         workflowName: job.workflow_name || null,
         runnerName: job.runner_name || null,
-        runnerOs: job.labels?.find((l: string) => l.includes('ubuntu') || l.includes('windows') || l.includes('macos')) || null,
+        runnerOs:
+          job.labels?.find(
+            (l: string) =>
+              l.includes("ubuntu") ||
+              l.includes("windows") ||
+              l.includes("macos")
+          ) || null,
         installationId: installation.id,
-        startedAt: action === 'in_progress' && job.started_at ? new Date(job.started_at) : null,
+        startedAt:
+          action === "in_progress" && job.started_at
+            ? new Date(job.started_at)
+            : null,
       };
 
-      await prisma.job.upsert({
-        where: { githubJobId: job.id.toString() },
-        update: jobData,
-        create: jobData,
+      // Upsert equivalent in TypeORM
+      const jobRepo = AppDataSource.getRepository("Job");
+      const existing = await jobRepo.findOne({
+        where: { githubJobId: job.id.toString() } as any,
       });
+      if (existing) {
+        await jobRepo.update(existing.id, jobData as any);
+      } else {
+        await jobRepo.save(jobData as any);
+      }
 
-      console.log('Job record created/updated:', job.id);
-    } else if (action === 'completed') {
+      console.log("Job record created/updated:", job.id);
+    } else if (action === "completed") {
       // Update job status and fetch logs
-      const existingJob = await prisma.job.findUnique({
-        where: { githubJobId: job.id.toString() },
+      const jobRepo = AppDataSource.getRepository("Job");
+      const existingJob = await jobRepo.findOne({
+        where: { githubJobId: job.id.toString() } as any,
       });
 
       if (!existingJob) {
@@ -107,58 +129,61 @@ webhooks.on('workflow_job', async ({ payload }) => {
       // Fetch and upload logs
       let logUrl: string | null = null;
       try {
-        const githubService = new GitHubService(parseInt(installation.githubInstallationId));
-        const [owner, repo] = repository.full_name.split('/');
+        const githubService = new GitHubService(
+          parseInt(installation.githubInstallationId)
+        );
+        const [owner, repo] = repository.full_name.split("/");
         const logs = await githubService.getJobLogs(owner, repo, job.id);
 
         const storageService = new StorageService();
         logUrl = await storageService.uploadJobLogs(job.id.toString(), logs);
 
-        console.log('Logs uploaded to storage:', logUrl);
+        console.log("Logs uploaded to storage:", logUrl);
       } catch (error) {
-        console.error('Error fetching/uploading logs:', error);
+        console.error("Error fetching/uploading logs:", error);
       }
 
       // Update job
-      await prisma.job.update({
-        where: { githubJobId: job.id.toString() },
-        data: {
-          status: 'completed',
+      if (existingJob) {
+        await jobRepo.update(existingJob.id, {
+          status: "completed",
           conclusion: job.conclusion,
-          completedAt: job.completed_at ? new Date(job.completed_at) : new Date(),
+          completedAt: job.completed_at
+            ? new Date(job.completed_at)
+            : new Date(),
           logUrl: logUrl,
-        },
-      });
+        } as any);
+      }
 
-      console.log('Job completed:', job.id);
+      console.log("Job completed:", job.id);
     }
   } catch (error) {
-    console.error('Error processing workflow_job webhook:', error);
+    console.error("Error processing workflow_job webhook:", error);
   }
 });
 
 // POST /webhooks/github - Main webhook endpoint
-router.post('/github', async (req, res) => {
-  const signature = req.headers['x-hub-signature-256'] as string;
-  const event = req.headers['x-github-event'] as string;
+router.post("/github", async (req: Request, res: Response) => {
+  const signature = req.headers["x-hub-signature-256"] as string;
+  const event = req.headers["x-github-event"] as string;
 
   if (!signature) {
-    console.warn('No signature provided in webhook request');
-    return res.status(401).send('Unauthorized');
+    console.warn("No signature provided in webhook request");
+    return res.status(401).send("Unauthorized");
   }
 
   try {
     await webhooks.verifyAndReceive({
-      id: req.headers['x-github-delivery'] as string,
+      id: req.headers["x-github-delivery"] as string,
       name: event as any,
       signature: signature,
       payload: JSON.stringify(req.body),
     });
 
-    res.status(200).send('Webhook processed');
+    res.status(200).send("Webhook processed");
   } catch (error) {
-    console.error('Error processing webhook:', error);
-    res.status(500).send('Webhook processing failed');
+    console.error("Error processing webhook:", error);
+    res.status(500).send("Webhook processing failed");
   }
 });
 

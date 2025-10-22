@@ -1,7 +1,16 @@
-import { PrismaClient } from '@prisma/client';
+import AppDataSource from "./data-source";
 
-const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
+export async function connectDb() {
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
+  return AppDataSource;
+}
 
-export default prisma;
+export async function disconnectDb() {
+  if (AppDataSource.isInitialized) {
+    await AppDataSource.destroy();
+  }
+}
+
+export default AppDataSource;

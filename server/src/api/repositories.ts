@@ -1,25 +1,29 @@
-import { Router } from 'express';
-import prisma from '../db';
-import { GitHubService } from '../services/github.service';
+import { Router, Request, Response } from "express";
+import AppDataSource from "../data-source";
+import { Installation } from "../entities/Installation";
+import { GitHubService } from "../services/github.service";
 
 const router = Router();
 
 // GET /api/orgs/:org/repos - List repositories for an organization
-router.get('/:org/repos', async (req, res) => {
+router.get("/:org/repos", async (req: Request, res: Response) => {
   try {
     const { org } = req.params;
 
     // Find the installation by organization login
-    const installation = await prisma.installation.findFirst({
+    const installationRepo = AppDataSource.getRepository(Installation);
+    const installation = await installationRepo.findOne({
       where: { accountLogin: org },
     });
 
     if (!installation) {
-      return res.status(404).json({ error: 'Organization not found' });
+      return res.status(404).json({ error: "Organization not found" });
     }
 
     // Get repositories from GitHub API
-    const githubService = new GitHubService(parseInt(installation.githubInstallationId));
+    const githubService = new GitHubService(
+      parseInt(installation!.githubInstallationId)
+    );
     const repos = await githubService.getInstallationRepositories(
       parseInt(installation.githubInstallationId)
     );
@@ -33,8 +37,8 @@ router.get('/:org/repos', async (req, res) => {
 
     res.json(repositories);
   } catch (error) {
-    console.error('Error fetching repositories:', error);
-    res.status(500).json({ error: 'Failed to fetch repositories' });
+    console.error("Error fetching repositories:", error);
+    res.status(500).json({ error: "Failed to fetch repositories" });
   }
 });
 
