@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { connectDb, disconnectDb } from "./db";
 
 // Import route handlers
+import authRouter from "./routes/auth";
 import organizationsRouter from "./routes/organizations";
 import repositoriesRouter from "./routes/repositories";
 import runsRouter from "./routes/runs";
@@ -33,6 +34,7 @@ app.get("/health", (req: Request, res: Response) => {
 });
 
 // API Routes
+app.use("/auth", authRouter);
 app.use("/api/organizations", organizationsRouter);
 app.use("/api/orgs", repositoriesRouter);
 app.use("/api/repos", runsRouter);

@@ -1,7 +1,13 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GithubLogo, ChartLine, Gauge, Activity } from '@phosphor-icons/react';
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { GithubLogo, ChartLine, Gauge, Activity } from "@phosphor-icons/react";
 
 export const LoginPage = () => {
   const { login } = useAuth();
@@ -17,7 +23,8 @@ export const LoginPage = () => {
             GitHub Actions Runner Observatory
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Monitor and analyze performance metrics from your self-hosted GitHub Actions runners
+            Monitor and analyze performance metrics from your self-hosted GitHub
+            Actions runners
           </p>
         </div>
 
@@ -70,7 +77,7 @@ export const LoginPage = () => {
               Sign in with GitHub
             </Button>
             <p className="text-xs text-muted-foreground text-center mt-4">
-              This is a demo environment. Authentication is simulated.
+              You will be redirected to GitHub to authorize this application.
             </p>
           </CardContent>
         </Card>
