@@ -1,10 +1,10 @@
 import { Router, Request, Response } from "express";
 import { Webhooks } from "@octokit/webhooks";
 import AppDataSource from "../data-source";
-import { Installation } from "../entities/Installation";
-import { Job } from "../entities/Job";
-import { GitHubService } from "../services/github.service";
-import { StorageService } from "../services/storage.service";
+import { Installation } from "../models/Installation";
+import { Job } from "../models/Job";
+import { GitHubService } from "../services/github";
+import { StorageService } from "../services/storage";
 
 const router = Router();
 

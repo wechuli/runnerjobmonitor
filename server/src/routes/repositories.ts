@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import AppDataSource from "../data-source";
-import { Installation } from "../entities/Installation";
-import { GitHubService } from "../services/github.service";
+import { Installation } from "../models/Installation";
+import { GitHubService } from "../services/github";
 
 const router = Router();
 

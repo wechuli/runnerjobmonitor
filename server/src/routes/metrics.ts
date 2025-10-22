@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
 import AppDataSource from "../data-source";
-import { Job } from "../entities/Job";
-import { Installation } from "../entities/Installation";
-import { Metric } from "../entities/Metric";
+import { Job } from "../models/Job";
+import { Installation } from "../models/Installation";
+import { Metric } from "../models/Metric";
 import { MetricPayload } from "../types";
 
 const router = Router();

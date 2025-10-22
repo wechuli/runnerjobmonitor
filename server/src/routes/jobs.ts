@@ -1,9 +1,9 @@
 import { Router, Request, Response } from "express";
 import AppDataSource from "../data-source";
-import { Job } from "../entities/Job";
-import { Metric } from "../entities/Metric";
-import { GeminiService } from "../services/gemini.service";
-import { StorageService } from "../services/storage.service";
+import { Job } from "../models/Job";
+import { Metric } from "../models/Metric";
+import { GeminiService } from "../services/gemini";
+import { StorageService } from "../services/storage";
 
 const router = Router();
 

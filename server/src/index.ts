@@ -2,15 +2,14 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { connectDb, disconnectDb } from "./db";
-import "reflect-metadata";
 
 // Import route handlers
-import organizationsRouter from "./api/organizations";
-import repositoriesRouter from "./api/repositories";
-import runsRouter from "./api/runs";
-import jobsRouter from "./api/jobs";
-import metricsRouter from "./api/metrics";
-import webhooksRouter from "./api/webhooks";
+import organizationsRouter from "./routes/organizations";
+import repositoriesRouter from "./routes/repositories";
+import runsRouter from "./routes/runs";
+import jobsRouter from "./routes/jobs";
+import metricsRouter from "./routes/metrics";
+import webhooksRouter from "./routes/webhooks";
 
 // Load environment variables
 dotenv.config();

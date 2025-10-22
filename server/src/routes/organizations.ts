@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import AppDataSource from "../data-source";
-import { Installation } from "../entities/Installation";
+import { Installation } from "../models/Installation";
 
 const router = Router();
 
