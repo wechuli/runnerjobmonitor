@@ -5,7 +5,7 @@ const router = Router();
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "Iv23ctWkbzHS5mHAzOIg";
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5000";
 
 // POST /auth/github/callback - Exchange code for access token
 router.post("/github/callback", async (req: Request, res: Response) => {

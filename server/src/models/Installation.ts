@@ -16,19 +16,19 @@ export class Installation {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true })
+  @Column("varchar", { unique: true })
   githubInstallationId!: string;
 
-  @Column()
+  @Column("varchar")
   accountLogin!: string;
 
-  @Column()
+  @Column("varchar")
   accountType!: string; // "User" or "Organization"
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   avatarUrl?: string;
 
-  @Column({ nullable: true })
+  @Column("int", { nullable: true })
   userId?: number;
 
   @ManyToOne(() => User, (user) => user.installations, { nullable: true })

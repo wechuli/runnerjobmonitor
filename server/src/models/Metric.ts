@@ -15,47 +15,47 @@ export class Metric {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column("int")
   jobId!: number;
 
   @ManyToOne(() => Job, (job) => job.metrics)
   @JoinColumn({ name: "jobId" })
   job!: Job;
 
-  @Column({ type: "timestamptz" })
+  @Column("timestamptz")
   timestamp!: Date;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   hostname?: string;
 
-  @Column({ nullable: true, type: "int" })
+  @Column("int", { nullable: true })
   cpuCores?: number;
 
-  @Column({ nullable: true, type: "float" })
+  @Column("float", { nullable: true })
   cpuUsagePercent?: number;
 
-  @Column({ nullable: true, type: "bigint" })
+  @Column("bigint", { nullable: true })
   memoryTotalBytes?: string;
 
-  @Column({ nullable: true, type: "bigint" })
+  @Column("bigint", { nullable: true })
   memoryUsedBytes?: string;
 
-  @Column({ nullable: true, type: "float" })
+  @Column("float", { nullable: true })
   memoryUsagePercent?: number;
 
-  @Column({ nullable: true, type: "float" })
+  @Column("float", { nullable: true })
   diskUsagePercent?: number;
 
-  @Column({ nullable: true, type: "bigint" })
+  @Column("bigint", { nullable: true })
   networkRxBytes?: string;
 
-  @Column({ nullable: true, type: "bigint" })
+  @Column("bigint", { nullable: true })
   networkTxBytes?: string;
 
-  @Column({ nullable: true, type: "text" })
+  @Column("text", { nullable: true })
   topProcesses?: string; // JSON string
 
-  @Column({ type: "text" })
+  @Column("text")
   rawPayload!: string; // Full JSON payload
 
   @CreateDateColumn()

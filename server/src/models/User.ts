@@ -13,19 +13,19 @@ export class User {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true })
+  @Column("varchar", { unique: true })
   githubId!: string;
 
-  @Column()
+  @Column("varchar")
   username!: string;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   email?: string;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   avatarUrl?: string;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   accessToken?: string;
 
   @CreateDateColumn()

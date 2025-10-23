@@ -16,52 +16,52 @@ export class Job {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true })
+  @Column("varchar", { unique: true })
   githubJobId!: string;
 
-  @Column()
+  @Column("varchar")
   githubRunId!: string;
 
-  @Column()
+  @Column("varchar")
   name!: string;
 
-  @Column()
+  @Column("varchar")
   status!: string; // queued, in_progress, completed
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   conclusion?: string; // success, failure, cancelled, skipped
 
-  @Column()
+  @Column("varchar")
   repository!: string;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   branch?: string;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   commitHash?: string;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   workflowName?: string;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   runnerName?: string;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   runnerOs?: string;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   runnerArch?: string;
 
-  @Column({ type: "timestamptz", nullable: true })
+  @Column("timestamptz", { nullable: true })
   startedAt?: Date;
 
-  @Column({ type: "timestamptz", nullable: true })
+  @Column("timestamptz", { nullable: true })
   completedAt?: Date;
 
-  @Column({ nullable: true })
+  @Column("varchar", { nullable: true })
   logUrl?: string;
 
-  @Column()
+  @Column("int")
   installationId!: number;
 
   @ManyToOne(() => Installation, (installation) => installation.jobs)

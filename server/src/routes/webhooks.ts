@@ -1,5 +1,4 @@
 import { Router, Request, Response } from "express";
-import { Webhooks } from "@octokit/webhooks";
 import AppDataSource from "../data-source";
 import { Installation } from "../models/Installation";
 import { Job } from "../models/Job";
@@ -10,157 +9,172 @@ const router = Router();
 
 const WEBHOOK_SECRET =
   process.env.GITHUB_WEBHOOK_SECRET || "development-secret";
-const webhooks = new Webhooks({
-  secret: WEBHOOK_SECRET,
-});
 
-// Handle installation events
-webhooks.on("installation.created", async ({ payload }: any) => {
-  console.log("GitHub App installed:", payload.installation.id);
+// Initialize webhooks instance dynamically
+let webhooks: any = null;
 
-  try {
-    const installation = payload.installation;
-    const account = installation.account;
-
-    const installationRepo = AppDataSource.getRepository(Installation);
-    const installationRecord = installationRepo.create({
-      githubInstallationId: installation.id.toString(),
-      accountLogin: account?.login || "unknown",
-      accountType: account?.type || "Organization",
-      avatarUrl: account?.avatar_url || null,
-    });
-    await installationRepo.save(installationRecord);
-
-    console.log("Installation record created for:", account?.login);
-  } catch (error) {
-    console.error("Error creating installation record:", error);
-  }
-});
-
-// Handle installation deletion
-webhooks.on("installation.deleted", async ({ payload }: any) => {
-  console.log("GitHub App uninstalled:", payload.installation.id);
-
-  try {
-    const installationRepo = AppDataSource.getRepository(Installation);
-    await installationRepo.delete({
-      githubInstallationId: payload.installation.id.toString(),
-    } as any);
-
-    console.log("Installation record deleted");
-  } catch (error) {
-    console.error("Error deleting installation record:", error);
-  }
-});
-
-// Handle workflow_job events
-webhooks.on("workflow_job", async ({ payload }: any) => {
-  const job = payload.workflow_job;
-  const action = payload.action;
-  const repository = payload.repository;
-
-  console.log(`Workflow job ${action}:`, job.id, job.name);
-
-  try {
-    // Find the installation for this repository
-    const [owner] = repository.full_name.split("/");
-    const installationRepo = AppDataSource.getRepository(Installation);
-    const installation = await installationRepo.findOne({
-      where: { accountLogin: owner },
+async function getWebhooks() {
+  if (!webhooks) {
+    const { Webhooks } = await import("@octokit/webhooks");
+    webhooks = new Webhooks({
+      secret: WEBHOOK_SECRET,
     });
 
-    if (!installation) {
-      console.warn(
-        `No installation found for repository ${repository.full_name}`
-      );
-      return;
+    // Setup event handlers
+    setupWebhookHandlers();
+  }
+  return webhooks;
+}
+
+function setupWebhookHandlers() {
+  // Handle installation events
+  webhooks.on("installation.created", async ({ payload }: any) => {
+    console.log("GitHub App installed:", payload.installation.id);
+
+    try {
+      const installation = payload.installation;
+      const account = installation.account;
+
+      const installationRepo = AppDataSource.getRepository(Installation);
+      const installationRecord = installationRepo.create({
+        githubInstallationId: installation.id.toString(),
+        accountLogin: account?.login || "unknown",
+        accountType: account?.type || "Organization",
+        avatarUrl: account?.avatar_url || null,
+      });
+      await installationRepo.save(installationRecord);
+
+      console.log("Installation record created for:", account?.login);
+    } catch (error) {
+      console.error("Error creating installation record:", error);
     }
+  });
 
-    if (action === "queued" || action === "in_progress") {
-      // Create or update job record
-      const jobData = {
-        githubJobId: job.id.toString(),
-        githubRunId: job.run_id.toString(),
-        name: job.name,
-        status: action,
-        repository: repository.full_name,
-        branch: job.head_branch || null,
-        commitHash: job.head_sha || null,
-        workflowName: job.workflow_name || null,
-        runnerName: job.runner_name || null,
-        runnerOs:
-          job.labels?.find(
-            (l: string) =>
-              l.includes("ubuntu") ||
-              l.includes("windows") ||
-              l.includes("macos")
-          ) || null,
-        installationId: installation.id,
-        startedAt:
-          action === "in_progress" && job.started_at
-            ? new Date(job.started_at)
-            : null,
-      };
+  // Handle installation deletion
+  webhooks.on("installation.deleted", async ({ payload }: any) => {
+    console.log("GitHub App uninstalled:", payload.installation.id);
 
-      // Upsert equivalent in TypeORM
-      const jobRepo = AppDataSource.getRepository("Job");
-      const existing = await jobRepo.findOne({
-        where: { githubJobId: job.id.toString() } as any,
-      });
-      if (existing) {
-        await jobRepo.update(existing.id, jobData as any);
-      } else {
-        await jobRepo.save(jobData as any);
-      }
+    try {
+      const installationRepo = AppDataSource.getRepository(Installation);
+      await installationRepo.delete({
+        githubInstallationId: payload.installation.id.toString(),
+      } as any);
 
-      console.log("Job record created/updated:", job.id);
-    } else if (action === "completed") {
-      // Update job status and fetch logs
-      const jobRepo = AppDataSource.getRepository("Job");
-      const existingJob = await jobRepo.findOne({
-        where: { githubJobId: job.id.toString() } as any,
+      console.log("Installation record deleted");
+    } catch (error) {
+      console.error("Error deleting installation record:", error);
+    }
+  });
+
+  // Handle workflow_job events
+  webhooks.on("workflow_job", async ({ payload }: any) => {
+    const job = payload.workflow_job;
+    const action = payload.action;
+    const repository = payload.repository;
+
+    console.log(`Workflow job ${action}:`, job.id, job.name);
+
+    try {
+      // Find the installation for this repository
+      const [owner] = repository.full_name.split("/");
+      const installationRepo = AppDataSource.getRepository(Installation);
+      const installation = await installationRepo.findOne({
+        where: { accountLogin: owner },
       });
 
-      if (!existingJob) {
-        console.warn(`Job ${job.id} not found in database`);
+      if (!installation) {
+        console.warn(
+          `No installation found for repository ${repository.full_name}`
+        );
         return;
       }
 
-      // Fetch and upload logs
-      let logUrl: string | null = null;
-      try {
-        const githubService = new GitHubService(
-          parseInt(installation.githubInstallationId)
-        );
-        const [owner, repo] = repository.full_name.split("/");
-        const logs = await githubService.getJobLogs(owner, repo, job.id);
+      if (action === "queued" || action === "in_progress") {
+        // Create or update job record
+        const jobData = {
+          githubJobId: job.id.toString(),
+          githubRunId: job.run_id.toString(),
+          name: job.name,
+          status: action,
+          repository: repository.full_name,
+          branch: job.head_branch || null,
+          commitHash: job.head_sha || null,
+          workflowName: job.workflow_name || null,
+          runnerName: job.runner_name || null,
+          runnerOs:
+            job.labels?.find(
+              (l: string) =>
+                l.includes("ubuntu") ||
+                l.includes("windows") ||
+                l.includes("macos")
+            ) || null,
+          installationId: installation.id,
+          startedAt:
+            action === "in_progress" && job.started_at
+              ? new Date(job.started_at)
+              : null,
+        };
 
-        const storageService = new StorageService();
-        logUrl = await storageService.uploadJobLogs(job.id.toString(), logs);
+        // Upsert equivalent in TypeORM
+        const jobRepo = AppDataSource.getRepository("Job");
+        const existing = await jobRepo.findOne({
+          where: { githubJobId: job.id.toString() } as any,
+        });
+        if (existing) {
+          await jobRepo.update(existing.id, jobData as any);
+        } else {
+          await jobRepo.save(jobData as any);
+        }
 
-        console.log("Logs uploaded to storage:", logUrl);
-      } catch (error) {
-        console.error("Error fetching/uploading logs:", error);
+        console.log("Job record created/updated:", job.id);
+      } else if (action === "completed") {
+        // Update job status and fetch logs
+        const jobRepo = AppDataSource.getRepository("Job");
+        const existingJob = await jobRepo.findOne({
+          where: { githubJobId: job.id.toString() } as any,
+        });
+
+        if (!existingJob) {
+          console.warn(`Job ${job.id} not found in database`);
+          return;
+        }
+
+        // Fetch and upload logs
+        let logUrl: string | null = null;
+        try {
+          const githubService = new GitHubService(
+            parseInt(installation.githubInstallationId)
+          );
+          const [owner, repo] = repository.full_name.split("/");
+          const logs = await githubService.getJobLogs(owner, repo, job.id);
+
+          const storageService = new StorageService();
+          logUrl = await storageService.uploadJobLogs(job.id.toString(), logs);
+
+          console.log("Logs uploaded to storage:", logUrl);
+        } catch (error) {
+          console.error("Error fetching/uploading logs:", error);
+        }
+
+        // Update job
+        if (existingJob) {
+          await jobRepo.update(existingJob.id, {
+            status: "completed",
+            conclusion: job.conclusion,
+            completedAt: job.completed_at
+              ? new Date(job.completed_at)
+              : new Date(),
+            logUrl: logUrl,
+          } as any);
+        }
+
+        console.log("Job completed:", job.id);
       }
-
-      // Update job
-      if (existingJob) {
-        await jobRepo.update(existingJob.id, {
-          status: "completed",
-          conclusion: job.conclusion,
-          completedAt: job.completed_at
-            ? new Date(job.completed_at)
-            : new Date(),
-          logUrl: logUrl,
-        } as any);
-      }
-
-      console.log("Job completed:", job.id);
+    } catch (error) {
+      console.error("Error processing workflow_job webhook:", error);
     }
-  } catch (error) {
-    console.error("Error processing workflow_job webhook:", error);
-  }
-});
+  });
+}
 
 // POST /webhooks/github - Main webhook endpoint
 router.post("/github", async (req: Request, res: Response) => {
@@ -173,7 +187,9 @@ router.post("/github", async (req: Request, res: Response) => {
   }
 
   try {
-    await webhooks.verifyAndReceive({
+    const webhooksInstance = await getWebhooks();
+
+    await webhooksInstance.verifyAndReceive({
       id: req.headers["x-github-delivery"] as string,
       name: event as any,
       signature: signature,
