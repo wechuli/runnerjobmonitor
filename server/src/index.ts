@@ -1,89 +1,19 @@
-import express, { Request, Response } from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import { connectDb, disconnectDb } from "./db";
+import { app, logger } from "./app";
+import { env } from "./common/utils/envConfig";
 
-// Import route handlers
-import authRouter from "./routes/auth";
-import organizationsRouter from "./routes/organizations";
-import repositoriesRouter from "./routes/repositories";
-import runsRouter from "./routes/runs";
-import jobsRouter from "./routes/jobs";
-import metricsRouter from "./routes/metrics";
-import webhooksRouter from "./routes/webhooks";
-
-// Load environment variables
-dotenv.config();
-
-const app = express();
-const PORT = process.env.PORT || 3001;
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5001";
-
-// Middleware
-app.use(
-  cors({
-    origin: FRONTEND_URL,
-    credentials: true,
-  })
-);
-app.use(express.json());
-
-// Health check endpoint
-app.get("/health", (req: Request, res: Response) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+const server = app.listen(env.PORT, () => {
+  const { NODE_ENV, HOST, PORT } = env;
+  logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
 });
 
-// API Routes
-app.use("/auth", authRouter);
-app.use("/api/organizations", organizationsRouter);
-app.use("/api/orgs", repositoriesRouter);
-app.use("/api/repos", runsRouter);
-app.use("/api/runs", runsRouter);
-app.use("/api/jobs", jobsRouter);
-app.use("/api/metrics", metricsRouter);
-app.use("/webhooks", webhooksRouter);
+const onCloseSignal = () => {
+  logger.info("sigint received, shutting down");
+  server.close(() => {
+    logger.info("server closed");
+    process.exit();
+  });
+  setTimeout(() => process.exit(1), 10000).unref(); // Force shutdown after 10s
+};
 
-// Error handling middleware
-app.use(
-  (
-    err: any,
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) => {
-    console.error("Unhandled error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-);
-
-// Start server
-async function startServer() {
-  try {
-    // Test database connection
-    await connectDb();
-    console.log("Database connected successfully");
-
-    app.listen(PORT, () => {
-      console.log(`Backend server running on http://localhost:${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-}
-
-// Handle graceful shutdown
-process.on("SIGINT", async () => {
-  console.log("Shutting down gracefully...");
-  await disconnectDb();
-  process.exit(0);
-});
-
-process.on("SIGTERM", async () => {
-  console.log("Shutting down gracefully...");
-  await disconnectDb();
-  process.exit(0);
-});
-
-startServer();
+process.on("SIGINT", onCloseSignal);
+process.on("SIGTERM", onCloseSignal);

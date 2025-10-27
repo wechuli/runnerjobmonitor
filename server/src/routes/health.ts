@@ -1,11 +1,9 @@
 import { Router } from "express";
 import { StatusCodes } from "http-status-codes";
 
-const oauthRouter = Router();
+const healthRouter = Router();
 
-oauthRouter.post("/callback", (_req, res) => {
-  // print the request data
-  console.log(_req.body);
+healthRouter.get("/", (_req, res) => {
   res.status(StatusCodes.OK).json({
     status: "ok",
     timestamp: new Date().toISOString(),
@@ -14,4 +12,4 @@ oauthRouter.post("/callback", (_req, res) => {
   });
 });
 
-export default oauthRouter;
+export default healthRouter;

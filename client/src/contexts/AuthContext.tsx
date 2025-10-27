@@ -56,16 +56,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleCallback = async (code: string, state: string) => {
     try {
       // Exchange code for access token via backend
-      const response = await fetch(
-        "http://localhost:3001/auth/github/callback",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ code, state }),
-        }
-      );
+      const response = await fetch("http://localhost:8080/api/auth/callback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code, state }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
