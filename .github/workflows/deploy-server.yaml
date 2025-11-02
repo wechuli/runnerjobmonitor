@@ -9,11 +9,11 @@ on:
             - ".github/workflows/deploy-server.yaml"
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
-  SERVICE_NAME: runnerjobmonitor-server
-  WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-  SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+    PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+    REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
+    SERVICE_NAME: runnerjobmonitor-server
+    WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+    SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
 jobs:
     deploy:
