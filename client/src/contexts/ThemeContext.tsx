@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, type ReactNode } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 
-type Theme = 'light' | 'dark';
+type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
@@ -11,25 +11,24 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useKV<Theme>('gh-runner-theme', 'dark');
-  const currentTheme = theme || 'dark';
+  const [theme, setTheme] = useLocalStorage<Theme>("gh-runner-theme", "dark");
 
   useEffect(() => {
     const root = document.documentElement;
-    if (currentTheme === 'dark') {
-      root.classList.add('dark');
+    if (theme === "dark") {
+      root.classList.add("dark");
     } else {
-      root.classList.remove('dark');
+      root.classList.remove("dark");
     }
-  }, [currentTheme]);
+  }, [theme]);
 
   const toggleTheme = () => {
-    const newTheme: Theme = currentTheme === 'light' ? 'dark' : 'light';
+    const newTheme: Theme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
   };
 
   return (
-    <ThemeContext.Provider value={{ theme: currentTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -38,7 +37,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
 };
