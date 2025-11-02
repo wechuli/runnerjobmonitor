@@ -89,7 +89,13 @@ interface Repository {
 
 interface GithubContext {
   user: string;
-  repositories: Repository[];
+  // Old format
+  repositories?: Repository[];
+  // New format
+  repository?: string;
+  github_base_url?: string;
+  workflow_run_id?: string;
+  check_run_id?: string;
 }
 
 interface JobMetric {
@@ -201,14 +207,27 @@ export const MetricsPage = () => {
   const latestMetric = metrics[0];
   const { github_context, system } = latestMetric;
 
+  // Helper function to get repository name from either format
+  const getRepositoryName = (ctx: GithubContext): string => {
+    // New format: repository is a string "owner/repo"
+    if (ctx.repository) {
+      return ctx.repository.split("/")[1] || ctx.repository;
+    }
+    // Old format: repositories is an array
+    if (ctx.repositories && ctx.repositories.length > 0) {
+      return ctx.repositories[0].name;
+    }
+    return "Unknown";
+  };
+
   // Transform metrics to match chart component expectations
   const transformedMetrics = metrics.map((metric) => ({
     timestamp: metric.timestamp,
     github_context: {
       job_id: 0, // Not available in new structure
       run_id: 0, // Not available in new structure
-      user: metric.github_context.user,
-      repository: metric.github_context.repositories[0]?.name || "",
+      user: metric.github_context?.user || "Unknown",
+      repository: getRepositoryName(metric.github_context),
     },
     system: metric.system,
   }));
@@ -314,14 +333,16 @@ export const MetricsPage = () => {
                 <p className="text-sm font-medium text-muted-foreground">
                   User
                 </p>
-                <p className="text-lg font-mono">{github_context.user}</p>
+                <p className="text-lg font-mono">
+                  {github_context?.user || "N/A"}
+                </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Repository
                 </p>
                 <p className="text-lg font-mono">
-                  {github_context.repositories[0]?.name || "N/A"}
+                  {getRepositoryName(github_context)}
                 </p>
               </div>
               <div>
