@@ -1,100 +1,98 @@
 {
-  "payload": {
-    "timestamp": "2025-11-02 03:52:22",
-    "job_uuid": "591740fd-36d9-41e0-94e0-f7d6bff0f5c8",
-    "github_context": {
-      "user": "wechuli",
-      "repository": "githubuserdemo/ghametricscollectortest",
-      "github_base_url": "https://api.github.com",
-      "workflow_run_id": "19006929462",
-      "check_run_id": "54282237308"
+  "timestamp": "2025-11-02 03:52:22",
+  "job_uuid": "591740fd-36d9-41e0-94e0-f7d6bff0f5c8",
+  "github_context": {
+    "user": "wechuli",
+    "repository": "githubuserdemo/ghametricscollectortest",
+    "github_base_url": "https://api.github.com",
+    "workflow_run_id": "19006929462",
+    "check_run_id": "54282237308"
+  },
+  "system": {
+    "info": {
+      "hostname": "runnervmf2e7y",
+      "kernel": "6.11.0-1018-azure",
+      "uptime_seconds": 936
     },
-    "system": {
-      "info": {
-        "hostname": "runnervmf2e7y",
-        "kernel": "6.11.0-1018-azure",
-        "uptime_seconds": 936
+    "cpu": {
+      "cores": 2,
+      "model": "AMD EPYC 7763 64-Core Processor\n",
+      "load": { "avg_1min": 0, "avg_5min": 0.01, "avg_15min": 0.03 },
+      "current_usage": { "usage_percent": 1.85 }
+    },
+    "memory": {
+      "total_bytes": 8330166272,
+      "used_bytes": 760193024,
+      "free_bytes": 6293348352,
+      "available_bytes": 7569973248,
+      "usage_percent": 9.125784518314115
+    },
+    "disk": [
+      {
+        "filesystem": "/dev/root",
+        "size_bytes": 76887154688,
+        "used_bytes": 56926474240,
+        "available_bytes": 19943903232,
+        "use_percentage": 75,
+        "mounted_on": "/"
       },
-      "cpu": {
-        "cores": 2,
-        "model": "AMD EPYC 7763 64-Core Processor\n",
-        "load": { "avg_1min": 0, "avg_5min": 0.01, "avg_15min": 0.03 },
-        "current_usage": { "usage_percent": 1.85 }
+      {
+        "filesystem": "/dev/sda16",
+        "size_bytes": 923156480,
+        "used_bytes": 64303104,
+        "available_bytes": 794210304,
+        "use_percentage": 8,
+        "mounted_on": "/boot"
+      }
+    ],
+    "network": [
+      {
+        "interface": "eth0",
+        "state": "UP",
+        "stats": { "rx_bytes": 13260755, "tx_bytes": 2029928 }
       },
-      "memory": {
-        "total_bytes": 8330166272,
-        "used_bytes": 760193024,
-        "free_bytes": 6293348352,
-        "available_bytes": 7569973248,
-        "usage_percent": 9.125784518314115
+      {
+        "interface": "docker0",
+        "state": "DOWN",
+        "stats": { "rx_bytes": 0, "tx_bytes": 0 }
+      }
+    ],
+    "top_processes": [
+      {
+        "pid": 1924,
+        "cpu": 4.1,
+        "mem": 1.5,
+        "user": "runner",
+        "command": "/home/runner/actions-runner/cached/bin/Runner.Worker spawnclient 142 145"
       },
-      "disk": [
-        {
-          "filesystem": "/dev/root",
-          "size_bytes": 76887154688,
-          "used_bytes": 56926474240,
-          "available_bytes": 19943903232,
-          "use_percentage": 75,
-          "mounted_on": "/"
-        },
-        {
-          "filesystem": "/dev/sda16",
-          "size_bytes": 923156480,
-          "used_bytes": 64303104,
-          "available_bytes": 794210304,
-          "use_percentage": 8,
-          "mounted_on": "/boot"
-        }
-      ],
-      "network": [
-        {
-          "interface": "eth0",
-          "state": "UP",
-          "stats": { "rx_bytes": 13260755, "tx_bytes": 2029928 }
-        },
-        {
-          "interface": "docker0",
-          "state": "DOWN",
-          "stats": { "rx_bytes": 0, "tx_bytes": 0 }
-        }
-      ],
-      "top_processes": [
-        {
-          "pid": 1924,
-          "cpu": 4.1,
-          "mem": 1.5,
-          "user": "runner",
-          "command": "/home/runner/actions-runner/cached/bin/Runner.Worker spawnclient 142 145"
-        },
-        {
-          "pid": 1910,
-          "cpu": 1.8,
-          "mem": 1.1,
-          "user": "runner",
-          "command": "/home/runner/actions-runner/cached/bin/Runner.Listener run"
-        },
-        {
-          "pid": 1,
-          "cpu": 0.3,
-          "mem": 0.1,
-          "user": "root",
-          "command": "/sbin/init"
-        },
-        {
-          "pid": 1087,
-          "cpu": 0.1,
-          "mem": 0.4,
-          "user": "root",
-          "command": "/usr/bin/python3 -u bin/WALinuxAgent-2.15.0.1-py3.12.egg -run-exthandlers"
-        },
-        {
-          "pid": 322,
-          "cpu": 0.1,
-          "mem": 0,
-          "user": "root",
-          "command": "/usr/lib/linux-tools/6.11.0-1018-azure/hv_kvp_daemon -n"
-        }
-      ]
-    }
+      {
+        "pid": 1910,
+        "cpu": 1.8,
+        "mem": 1.1,
+        "user": "runner",
+        "command": "/home/runner/actions-runner/cached/bin/Runner.Listener run"
+      },
+      {
+        "pid": 1,
+        "cpu": 0.3,
+        "mem": 0.1,
+        "user": "root",
+        "command": "/sbin/init"
+      },
+      {
+        "pid": 1087,
+        "cpu": 0.1,
+        "mem": 0.4,
+        "user": "root",
+        "command": "/usr/bin/python3 -u bin/WALinuxAgent-2.15.0.1-py3.12.egg -run-exthandlers"
+      },
+      {
+        "pid": 322,
+        "cpu": 0.1,
+        "mem": 0,
+        "user": "root",
+        "command": "/usr/lib/linux-tools/6.11.0-1018-azure/hv_kvp_daemon -n"
+      }
+    ]
   }
 }

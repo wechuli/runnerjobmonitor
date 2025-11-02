@@ -1,14 +1,12 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 // Define interfaces for the nested structures
-export interface IRepository {
-  name: string;
-  url: string;
-}
-
 export interface IGithubContext {
   user: string;
-  repositories: IRepository[];
+  repository: string;
+  github_base_url: string;
+  workflow_run_id: string;
+  check_run_id: string;
 }
 
 export interface ISystemInfo {
@@ -105,18 +103,22 @@ const JobMetricsSchema: Schema = new Schema(
         type: String,
         required: true,
       },
-      repositories: [
-        {
-          name: {
-            type: String,
-            required: true,
-          },
-          url: {
-            type: String,
-            required: true,
-          },
-        },
-      ],
+      repository: {
+        type: String,
+        required: true,
+      },
+      github_base_url: {
+        type: String,
+        required: true,
+      },
+      workflow_run_id: {
+        type: String,
+        required: true,
+      },
+      check_run_id: {
+        type: String,
+        required: true,
+      },
     },
     system: {
       info: {

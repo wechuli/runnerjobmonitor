@@ -11,12 +11,10 @@ const jobMetricsSchema = z.object({
   job_uuid: z.string().uuid(),
   github_context: z.object({
     user: z.string(),
-    repositories: z.array(
-      z.object({
-        name: z.string(),
-        url: z.string().url(),
-      })
-    ),
+    repository: z.string(),
+    github_base_url: z.string().url(),
+    workflow_run_id: z.string(),
+    check_run_id: z.string(),
   }),
   system: z.object({
     info: z.object({
