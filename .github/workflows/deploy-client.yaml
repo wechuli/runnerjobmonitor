@@ -43,7 +43,8 @@ jobs:
             - name: Build Docker image
               working-directory: ./client
               run: |
-                  docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+                  docker build --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} \
+                               -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }} \
                                -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:latest \
                                .
 
