@@ -2,7 +2,6 @@ import express from "express";
 import helmet from "helmet";
 import { pino } from "pino";
 import cors from "cors";
-import session from "express-session";
 import requestLogger from "./common/middleware/requestLogger";
 import errorHandler from "./common/middleware/errorHandler";
 import healthRouter from "./routes/health";
@@ -15,14 +14,6 @@ const app = express();
 
 // Middleware setup
 app.use(helmet());
-app.use(
-  session({
-    secret: process.env.SESSION_KEY as string,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }, // Set to true if using HTTPS
-  })
-);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
