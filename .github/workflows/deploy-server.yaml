@@ -1,75 +1,76 @@
 name: Deploy Server to Cloud Run
 
 on:
-    push:
-        branches:
-            - main
-        paths:
-            - "server/**"
-            - ".github/workflows/deploy-server.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "server/**"
+      - ".github/workflows/deploy-server.yaml"
+  workflow_dispatch:
 
 env:
-    PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-    REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
-    SERVICE_NAME: runnerjobmonitor-server
-    WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-    SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
+  SERVICE_NAME: runnerjobmonitor-server
+  WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            id-token: write
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Authenticate to Google Cloud
-              uses: google-github-actions/auth@v2
-              with:
-                  workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
-                  service_account: ${{ env.SERVICE_ACCOUNT }}
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
 
-            - name: Set up Cloud SDK
-              uses: google-github-actions/setup-gcloud@v2
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
-            - name: Configure Docker for Artifact Registry
-              run: |
-                  gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
-            - name: Build Docker image
-              working-directory: ./server
-              run: |
-                  docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }} \
-                               -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:latest \
-                               .
+      - name: Build Docker image
+        working-directory: ./server
+        run: |
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+                       -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:latest \
+                       .
 
-            - name: Push Docker image to Artifact Registry
-              run: |
-                  docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }}
-                  docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:latest
+      - name: Push Docker image to Artifact Registry
+        run: |
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:latest
 
-            - name: Deploy to Cloud Run
-              run: |
-                  gcloud run deploy ${{ env.SERVICE_NAME }} \
-                    --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }} \
-                    --region=${{ env.REGION }} \
-                    --platform=managed \
-                    --allow-unauthenticated \
-                    --port=8080 \
-                    --memory=1Gi \
-                    --cpu=1 \
-                    --min-instances=0 \
-                    --max-instances=10 \
-                    --timeout=300 \
-                    --set-env-vars="NODE_ENV=production,PORT=8080" \
-                    --set-secrets="MONGO_URI=MONGO_URI:latest"
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=1Gi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=10 \
+            --timeout=300 \
+            --set-env-vars="NODE_ENV=production,PORT=8080" \
+            --set-secrets="MONGO_URI=MONGO_URI:latest"
 
-            - name: Show Service URL
-              run: |
-                  SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} --region=${{ env.REGION }} --format='value(status.url)')
-                  echo "🚀 Server deployed successfully!"
-                  echo "Service URL: $SERVICE_URL"
-                  echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_ENV
+      - name: Show Service URL
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} --region=${{ env.REGION }} --format='value(status.url)')
+          echo "🚀 Server deployed successfully!"
+          echo "Service URL: $SERVICE_URL"
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_ENV
