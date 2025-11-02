@@ -65,7 +65,7 @@ jobs:
             --min-instances=0 \
             --max-instances=10 \
             --timeout=300 \
-            --set-env-vars="NODE_ENV=production,PORT=8080" \
+            --set-env-vars="NODE_ENV=production" \
             --set-secrets="MONGO_URI=MONGO_URI:latest"
 
       - name: Show Service URL
