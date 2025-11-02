@@ -23,7 +23,7 @@ gcloud services enable \
 ## 2. Set Environment Variables
 
 ```bash
-export PROJECT_ID="your-gcp-project-id"
+export PROJECT_ID="shambafusionproj"
 export REGION="us-central1"  # Change to your preferred region
 export GITHUB_REPO="wechuli/runnerjobmonitor"  # Format: owner/repo
 ```
@@ -34,14 +34,14 @@ export GITHUB_REPO="wechuli/runnerjobmonitor"  # Format: owner/repo
 gcloud artifacts repositories create runnerjobmonitor \
   --repository-format=docker \
   --location=$REGION \
-  --description="Docker repository for GitHub Actions Runner"
+  --description="Docker repository for GitHub Actions Runner Job Monitor"
 ```
 
 ## 4. Create Service Account
 
 ```bash
 gcloud iam service-accounts create github-actions-deployer \
-  --display-name="GitHub Actions Deployer" \
+  --display-name="GitHub Actions Runner Job Deployer" \
   --project=$PROJECT_ID
 ```
 
