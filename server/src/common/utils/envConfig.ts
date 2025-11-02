@@ -19,6 +19,10 @@ const envSchema = z.object({
     .default(1000),
 
   COMMON_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(1000),
+
+  MONGO_URI: z.string().min(1),
+
+  SESSION_KEY: z.string().min(1).default("default-session-key"),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -34,3 +38,5 @@ export const env = {
   isProduction: parsedEnv.data.NODE_ENV === "production",
   isTest: parsedEnv.data.NODE_ENV === "test",
 };
+
+export const config = env;

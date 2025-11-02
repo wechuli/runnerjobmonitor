@@ -1,66 +1,101 @@
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { MetricDataPoint } from '@/types';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import type { MetricDataPoint } from "@/types";
 
 interface MemoryChartProps {
   data: MetricDataPoint[];
 }
 
-export const MemoryChart = ({ data }: MemoryChartProps) => {
-  const chartData = data.map((point) => ({
-    time: new Date(point.timestamp.replace(' ', 'T')).toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false 
-    }),
-    memory: point.system.memory.usage_percent,
-  }));
+const formatBytes = (bytes: number): string => {
+  const gb = bytes / (1024 * 1024 * 1024);
+  return `${gb.toFixed(2)} GB`;
+};
 
-  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
-  const mutedForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim();
-  const popoverColor = getComputedStyle(document.documentElement).getPropertyValue('--popover').trim();
-  const popoverForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--popover-foreground').trim();
-  const chart2Color = getComputedStyle(document.documentElement).getPropertyValue('--chart-2').trim();
+export const MemoryChart = ({ data }: MemoryChartProps) => {
+  const chartData = data.map((point) => {
+    const timestamp = point.timestamp.includes("T")
+      ? point.timestamp
+      : point.timestamp.replace(" ", "T");
+
+    return {
+      time: new Date(timestamp).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }),
+      memory: point.system.memory.usage_percent,
+      used: point.system.memory.used_bytes,
+      total: point.system.memory.total_bytes,
+    };
+  });
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div
+          style={{
+            backgroundColor: "#ffffff",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+            padding: "8px 12px",
+            color: "#0f172a",
+          }}
+        >
+          <p style={{ fontWeight: 600, marginBottom: "4px" }}>{label}</p>
+          <p style={{ color: "#10b981", margin: 0 }}>
+            Memory: {payload[0].value.toFixed(1)}%
+          </p>
+          <p style={{ color: "#64748b", fontSize: "12px", margin: 0 }}>
+            {formatBytes(payload[0].payload.used)} /{" "}
+            {formatBytes(payload[0].payload.total)}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={borderColor} opacity={0.3} />
+      <AreaChart
+        data={chartData}
+        margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
         <XAxis
           dataKey="time"
-          fill={mutedForegroundColor}
+          stroke="#64748b"
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: borderColor }}
+          axisLine={{ stroke: "#e2e8f0" }}
         />
         <YAxis
-          fill={mutedForegroundColor}
+          stroke="#64748b"
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: borderColor }}
+          axisLine={{ stroke: "#e2e8f0" }}
           domain={[0, 100]}
-          label={{ 
-            value: 'Memory %', 
-            angle: -90, 
-            position: 'insideLeft',
-            style: { fill: mutedForegroundColor }
+          label={{
+            value: "Memory %",
+            angle: -90,
+            position: "insideLeft",
+            style: { fill: "#64748b" },
           }}
         />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: popoverColor,
-            border: `1px solid ${borderColor}`,
-            borderRadius: '8px',
-            color: popoverForegroundColor,
-          }}
-          labelStyle={{ color: popoverForegroundColor, fontWeight: 600 }}
-          itemStyle={{ color: chart2Color }}
-        />
+        <Tooltip content={<CustomTooltip />} />
         <Area
           type="monotone"
           dataKey="memory"
-          stroke={chart2Color}
-          fill={chart2Color}
+          stroke="#10b981"
+          fill="#10b981"
           fillOpacity={0.3}
           strokeWidth={2}
           name="Memory %"

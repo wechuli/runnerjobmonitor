@@ -1,68 +1,88 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { MetricDataPoint } from '@/types';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import type { MetricDataPoint } from "@/types";
 
 interface CpuChartProps {
   data: MetricDataPoint[];
 }
 
 export const CpuChart = ({ data }: CpuChartProps) => {
-  const chartData = data.map((point) => ({
-    time: new Date(point.timestamp.replace(' ', 'T')).toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false 
-    }),
-    cpu: point.system.cpu.usage_percent,
-  }));
+  console.log("CpuChart received data:", data);
+  console.log("First data point structure:", data[0]);
 
-  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
-  const mutedForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim();
-  const popoverColor = getComputedStyle(document.documentElement).getPropertyValue('--popover').trim();
-  const popoverForegroundColor = getComputedStyle(document.documentElement).getPropertyValue('--popover-foreground').trim();
-  const chart1Color = getComputedStyle(document.documentElement).getPropertyValue('--chart-1').trim();
+  const chartData = data.map((point) => {
+    // Handle both ISO format and space-separated format
+    const timestamp = point.timestamp.includes("T")
+      ? point.timestamp
+      : point.timestamp.replace(" ", "T");
+
+    return {
+      time: new Date(timestamp).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }),
+      cpu: point.system.cpu.current_usage.usage_percent,
+    };
+  });
+
+  console.log("CpuChart chartData:", chartData);
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={borderColor} opacity={0.3} />
+      <LineChart
+        data={chartData}
+        margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
         <XAxis
           dataKey="time"
-          fill={mutedForegroundColor}
+          stroke="#64748b"
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: borderColor }}
+          axisLine={{ stroke: "#e2e8f0" }}
         />
         <YAxis
-          fill={mutedForegroundColor}
+          stroke="#64748b"
           fontSize={12}
           tickLine={false}
-          axisLine={{ stroke: borderColor }}
+          axisLine={{ stroke: "#e2e8f0" }}
           domain={[0, 100]}
-          label={{ 
-            value: 'CPU %', 
-            angle: -90, 
-            position: 'insideLeft',
-            style: { fill: mutedForegroundColor }
+          label={{
+            value: "CPU %",
+            angle: -90,
+            position: "insideLeft",
+            style: { fill: "#64748b" },
           }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: popoverColor,
-            border: `1px solid ${borderColor}`,
-            borderRadius: '8px',
-            color: popoverForegroundColor,
+            backgroundColor: "#ffffff",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+            color: "#0f172a",
           }}
-          labelStyle={{ color: popoverForegroundColor, fontWeight: 600 }}
-          itemStyle={{ color: chart1Color }}
+          labelStyle={{
+            color: "#0f172a",
+            fontWeight: 600,
+          }}
+          itemStyle={{ color: "#3b82f6" }}
         />
         <Line
           type="monotone"
           dataKey="cpu"
-          stroke={chart1Color}
+          stroke="#3b82f6"
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 4, fill: chart1Color }}
+          activeDot={{ r: 4, fill: "#3b82f6" }}
           name="CPU %"
         />
       </LineChart>
