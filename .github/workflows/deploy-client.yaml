@@ -11,7 +11,7 @@ on:
 env:
     PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
     REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
-    SERVICE_NAME: github-actions-runner-client
+    SERVICE_NAME: runnerjobmonitor-client
     WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
     SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
@@ -42,19 +42,19 @@ jobs:
             - name: Build Docker image
               working-directory: ./client
               run: |
-                  docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/github-actions-runner/${{ env.SERVICE_NAME }}:${{ github.sha }} \
-                               -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/github-actions-runner/${{ env.SERVICE_NAME }}:latest \
+                  docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+                               -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:latest \
                                .
 
             - name: Push Docker image to Artifact Registry
               run: |
-                  docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/github-actions-runner/${{ env.SERVICE_NAME }}:${{ github.sha }}
-                  docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/github-actions-runner/${{ env.SERVICE_NAME }}:latest
+                  docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }}
+                  docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:latest
 
             - name: Deploy to Cloud Run
               run: |
                   gcloud run deploy ${{ env.SERVICE_NAME }} \
-                    --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/github-actions-runner/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+                    --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/runnerjobmonitor/${{ env.SERVICE_NAME }}:${{ github.sha }} \
                     --region=${{ env.REGION }} \
                     --platform=managed \
                     --allow-unauthenticated \

@@ -24,7 +24,7 @@
 # 1. Set variables
 export PROJECT_ID="your-project-id"
 export REGION="us-central1"
-export GITHUB_REPO="wechuli/github-actions-runne"
+export GITHUB_REPO="wechuli/runnerjobmonitor"
 
 # 2. Enable APIs
 gcloud services enable cloudresourcemanager.googleapis.com iam.googleapis.com \
@@ -32,7 +32,7 @@ gcloud services enable cloudresourcemanager.googleapis.com iam.googleapis.com \
   artifactregistry.googleapis.com secretmanager.googleapis.com
 
 # 3. Create Artifact Registry
-gcloud artifacts repositories create github-actions-runner \
+gcloud artifacts repositories create runnerjobmonitor \
   --repository-format=docker --location=$REGION
 
 # 4. Create Service Account
@@ -81,14 +81,14 @@ echo -n "postgresql://user:pass@host:5432/db" | gcloud secrets create DATABASE_U
 
 ### Client (React + Nginx)
 
-- **URL**: `https://github-actions-runner-client-{hash}-uc.a.run.app`
+- **URL**: `https://runnerjobmonitor-client-{hash}-uc.a.run.app`
 - **Port**: 8080
 - **Resources**: 512Mi RAM, 1 CPU
 - **Features**: SPA routing, gzip compression, security headers
 
 ### Server (Node.js + Express + Prisma)
 
-- **URL**: `https://github-actions-runner-server-{hash}-uc.a.run.app`
+- **URL**: `https://runnerjobmonitor-server-{hash}-uc.a.run.app`
 - **Port**: 8080
 - **Resources**: 1Gi RAM, 1 CPU
 - **Features**: Auto migrations, database secrets, API endpoints
@@ -105,12 +105,12 @@ echo -n "postgresql://user:pass@host:5432/db" | gcloud secrets create DATABASE_U
 gcloud run services list --region=$REGION
 
 # Stream logs
-gcloud run services logs tail github-actions-runner-client --region=$REGION
-gcloud run services logs tail github-actions-runner-server --region=$REGION
+gcloud run services logs tail runnerjobmonitor-client --region=$REGION
+gcloud run services logs tail runnerjobmonitor-server --region=$REGION
 
 # Get service URLs
-gcloud run services describe github-actions-runner-client --region=$REGION --format='value(status.url)'
-gcloud run services describe github-actions-runner-server --region=$REGION --format='value(status.url)'
+gcloud run services describe runnerjobmonitor-client --region=$REGION --format='value(status.url)'
+gcloud run services describe runnerjobmonitor-server --region=$REGION --format='value(status.url)'
 ```
 
 ## 🔧 Local Testing

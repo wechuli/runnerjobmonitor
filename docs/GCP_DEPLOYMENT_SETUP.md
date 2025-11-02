@@ -25,13 +25,13 @@ gcloud services enable \
 ```bash
 export PROJECT_ID="your-gcp-project-id"
 export REGION="us-central1"  # Change to your preferred region
-export GITHUB_REPO="wechuli/github-actions-runne"  # Format: owner/repo
+export GITHUB_REPO="wechuli/runnerjobmonitor"  # Format: owner/repo
 ```
 
 ## 3. Create Artifact Registry Repository
 
 ```bash
-gcloud artifacts repositories create github-actions-runner \
+gcloud artifacts repositories create runnerjobmonitor \
   --repository-format=docker \
   --location=$REGION \
   --description="Docker repository for GitHub Actions Runner"
@@ -184,10 +184,10 @@ git push origin main
 
 ```bash
 # Check client service
-gcloud run services describe github-actions-runner-client --region=$REGION
+gcloud run services describe runnerjobmonitor-client --region=$REGION
 
 # Check server service
-gcloud run services describe github-actions-runner-server --region=$REGION
+gcloud run services describe runnerjobmonitor-server --region=$REGION
 
 # Get service URLs
 gcloud run services list --region=$REGION
@@ -207,10 +207,10 @@ Both services are configured with:
 
 ```bash
 # Client logs
-gcloud run services logs read github-actions-runner-client --region=$REGION
+gcloud run services logs read runnerjobmonitor-client --region=$REGION
 
 # Server logs
-gcloud run services logs read github-actions-runner-server --region=$REGION
+gcloud run services logs read runnerjobmonitor-server --region=$REGION
 ```
 
 ##### Issue: "Database connection failed"
@@ -231,11 +231,11 @@ To delete all resources:
 
 ```bash
 # Delete Cloud Run services
-gcloud run services delete github-actions-runner-client --region=$REGION --quiet
-gcloud run services delete github-actions-runner-server --region=$REGION --quiet
+gcloud run services delete runnerjobmonitor-client --region=$REGION --quiet
+gcloud run services delete runnerjobmonitor-server --region=$REGION --quiet
 
 # Delete Artifact Registry repository
-gcloud artifacts repositories delete github-actions-runner --location=$REGION --quiet
+gcloud artifacts repositories delete runnerjobmonitor --location=$REGION --quiet
 
 # Delete service account
 gcloud iam service-accounts delete github-actions-deployer@${PROJECT_ID}.iam.gserviceaccount.com --quiet

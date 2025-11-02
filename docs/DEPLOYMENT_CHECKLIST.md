@@ -9,7 +9,7 @@ Use this checklist to ensure everything is configured correctly before deploying
 - [ ] Google Cloud Project created
 - [ ] `gcloud` CLI installed and authenticated
 - [ ] Required APIs enabled (Run, Artifact Registry, IAM, Secret Manager)
-- [ ] Artifact Registry repository created (`github-actions-runner`)
+- [ ] Artifact Registry repository created (`runnerjobmonitor`)
 - [ ] Service account created (`github-actions-deployer`)
 - [ ] IAM roles granted (Run Admin, Service Account User, Artifact Registry Writer, Secret Manager Accessor)
 - [ ] Workload Identity Pool created (`github-actions-pool`)
@@ -90,10 +90,10 @@ docker run -p 8080:8080 \
    gcloud run services list --region=us-central1
 
    # Get URLs
-   gcloud run services describe github-actions-runner-client \
+   gcloud run services describe runnerjobmonitor-client \
      --region=us-central1 --format='value(status.url)'
 
-   gcloud run services describe github-actions-runner-server \
+   gcloud run services describe runnerjobmonitor-server \
      --region=us-central1 --format='value(status.url)'
    ```
 
@@ -109,11 +109,11 @@ docker run -p 8080:8080 \
 
 ```bash
 # Client
-gcloud run services describe github-actions-runner-client \
+gcloud run services describe runnerjobmonitor-client \
   --region=us-central1 --format=yaml
 
 # Server
-gcloud run services describe github-actions-runner-server \
+gcloud run services describe runnerjobmonitor-server \
   --region=us-central1 --format=yaml
 ```
 
@@ -121,11 +121,11 @@ gcloud run services describe github-actions-runner-server \
 
 ```bash
 # Client logs
-gcloud run services logs tail github-actions-runner-client \
+gcloud run services logs tail runnerjobmonitor-client \
   --region=us-central1
 
 # Server logs
-gcloud run services logs tail github-actions-runner-server \
+gcloud run services logs tail runnerjobmonitor-server \
   --region=us-central1
 ```
 
@@ -133,10 +133,10 @@ gcloud run services logs tail github-actions-runner-server \
 
 ```bash
 # Get URLs
-CLIENT_URL=$(gcloud run services describe github-actions-runner-client \
+CLIENT_URL=$(gcloud run services describe runnerjobmonitor-client \
   --region=us-central1 --format='value(status.url)')
 
-SERVER_URL=$(gcloud run services describe github-actions-runner-server \
+SERVER_URL=$(gcloud run services describe runnerjobmonitor-server \
   --region=us-central1 --format='value(status.url)')
 
 # Test client
@@ -164,7 +164,7 @@ gcloud projects get-iam-policy $PROJECT_ID \
 
 ```bash
 gcloud artifacts docker images list \
-  us-central1-docker.pkg.dev/$PROJECT_ID/github-actions-runner
+  us-central1-docker.pkg.dev/$PROJECT_ID/runnerjobmonitor
 ```
 
 ### Issue: "Workload Identity Provider not found"

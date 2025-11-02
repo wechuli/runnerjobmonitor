@@ -30,7 +30,7 @@ Follow the complete guide in `docs/GCP_DEPLOYMENT_SETUP.md`:
 # Quick start
 export PROJECT_ID="your-project-id"
 export REGION="us-central1"
-export GITHUB_REPO="wechuli/github-actions-runne"
+export GITHUB_REPO="wechuli/runnerjobmonitor"
 
 # Then follow steps 2-11 in the setup guide
 ```
